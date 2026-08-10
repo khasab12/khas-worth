@@ -36,21 +36,7 @@
     min-height:100vh;
     padding-bottom:48px;
   }
-  .app{max-width:520px;margin:0 auto;padding:20px 18px 0;}
-
-  header.top{
-    display:flex;justify-content:space-between;align-items:baseline;
-    padding:6px 2px 18px;border-bottom:1px solid var(--line);
-    margin-bottom:26px;
-  }
-  header.top .brand{
-    font-family:'Fraunces', serif;font-weight:600;font-size:22px;letter-spacing:0.01em;
-  }
-  header.top .brand span{color:var(--gold);}
-  header.top .date{
-    font-family:'IBM Plex Mono', monospace;font-size:11.5px;color:var(--text-muted);
-    text-transform:uppercase;letter-spacing:0.08em;
-  }
+  .app{max-width:520px;margin:0 auto;padding:32px 18px 0;}
 
   /* Hero net worth */
   .hero{margin-bottom:34px;}
@@ -58,22 +44,28 @@
     font-family:'IBM Plex Mono', monospace;font-size:11px;letter-spacing:0.12em;
     text-transform:uppercase;color:var(--text-muted);margin-bottom:8px;
   }
-  .hero .figure-row{
-    display:flex;align-items:flex-end;justify-content:space-between;gap:12px;
-  }
   .hero .figure{
     font-family:'Fraunces', serif;font-weight:500;font-size:44px;line-height:1;
     font-variant-numeric:tabular-nums;
     padding-bottom:10px;
     border-bottom:3px double var(--line-strong);
   }
-  .hero .delta{
-    font-family:'IBM Plex Mono', monospace;font-size:13px;padding-bottom:12px;white-space:nowrap;
+
+  .chart-wrap{margin-bottom:22px;}
+  .chart{width:100%;height:150px;display:block;}
+  .chart-labels{margin-top:8px;}
+  .chart-legend{
+    display:flex;gap:16px;flex-wrap:wrap;
+    font-family:'IBM Plex Mono', monospace;font-size:10.5px;color:var(--text-muted);
+    margin-bottom:6px;
   }
-  .hero .delta.up{color:var(--gold);}
-  .hero .delta.down{color:var(--burgundy);}
-  .hero .delta.flat{color:var(--text-muted);}
-  .sparkline{width:100%;height:54px;margin-top:14px;display:block;}
+  .legend-item{display:flex;align-items:center;gap:6px;}
+  .legend-item i{width:8px;height:8px;border-radius:50%;display:inline-block;}
+  .chart-dates{
+    display:flex;justify-content:space-between;
+    font-family:'IBM Plex Mono', monospace;font-size:10px;color:var(--text-muted);
+  }
+  .hist-title{margin-top:4px;}
 
   /* Ledger sections */
   .ledger{margin-bottom:28px;}
@@ -152,22 +144,32 @@
   /* Snapshot bar */
   .snapshot-bar{
     margin:30px 0 30px;padding:16px;border:1px solid var(--line-strong);border-radius:var(--radius);
-    background:var(--ink-800);display:flex;align-items:center;justify-content:space-between;gap:12px;
+    background:var(--ink-800);display:flex;align-items:center;justify-content:space-between;gap:14px;
+    flex-wrap:wrap;
   }
+  .snapshot-bar .txt{flex:1 1 auto;min-width:0;}
   .snapshot-bar .txt .t{font-family:'Fraunces', serif;font-size:15px;font-weight:500;}
-  .snapshot-bar .txt .s{font-size:12px;color:var(--text-muted);margin-top:2px;}
+  .snapshot-bar .txt .s{font-size:12px;color:var(--text-muted);margin-top:2px;margin-bottom:10px;}
+  .date-input{
+    background:var(--ink-700);border:1px solid var(--line);color:var(--text);
+    font-family:'IBM Plex Mono', monospace;font-size:13px;padding:8px 10px;border-radius:7px;
+    width:100%;max-width:220px;
+    color-scheme:dark;
+  }
   .snapshot-btn{
     background:var(--paper);color:var(--ink-900);border:none;font-weight:600;
     font-family:'IBM Plex Sans', sans-serif;font-size:13px;padding:11px 16px;border-radius:8px;
-    cursor:pointer;white-space:nowrap;
+    cursor:pointer;white-space:nowrap;flex-shrink:0;
   }
   .snapshot-btn:hover{filter:brightness(0.95);}
   .snapshot-btn:disabled{opacity:0.5;cursor:default;}
 
   /* History */
-  .history h2{
+  .chart-section{margin-bottom:34px;}
+  .chart-section h2, .history h2{
     font-family:'Fraunces', serif;font-weight:500;font-size:17px;margin:0 0 10px;
   }
+  .history{margin-bottom:28px;}
   .hist-rows{border-top:1px solid var(--line);}
   .hist-row{
     display:flex;justify-content:space-between;align-items:center;
@@ -187,24 +189,22 @@
 <body>
 <div class="app">
 
-  <header class="top">
-    <div class="brand">The <span>Ledger</span></div>
-    <div class="date" id="todayDate"></div>
-  </header>
-
   <section class="hero">
     <div class="label">Net Worth</div>
-    <div class="figure-row">
-      <div class="figure" id="netWorthFigure">$0</div>
-      <div class="delta flat" id="netWorthDelta">no history yet</div>
+    <div class="figure" id="netWorthFigure">0€</div>
+  </section>
+
+  <section class="chart-section">
+    <div class="chart-wrap">
+      <svg class="chart" id="chart" viewBox="0 0 320 160" preserveAspectRatio="none"></svg>
+      <div class="chart-labels" id="chartLabels"></div>
     </div>
-    <svg class="sparkline" id="sparkline" viewBox="0 0 100 30" preserveAspectRatio="none"></svg>
   </section>
 
   <section class="ledger assets">
     <div class="ledger-head">
       <h2>Assets</h2>
-      <div class="total" id="assetsTotal">$0</div>
+      <div class="total" id="assetsTotal">0</div>
     </div>
     <div class="rows" id="assetsRows"></div>
     <div class="add-row">
@@ -232,7 +232,7 @@
   <section class="ledger liabilities">
     <div class="ledger-head">
       <h2>Liabilities</h2>
-      <div class="total" id="liabilitiesTotal">$0</div>
+      <div class="total" id="liabilitiesTotal">0</div>
     </div>
     <div class="rows" id="liabilitiesRows"></div>
     <div class="add-row">
@@ -255,20 +255,21 @@
     </div>
   </section>
 
-  <section class="snapshot-bar">
-    <div class="txt">
-      <div class="t">Record today's balance</div>
-      <div class="s" id="snapshotSub">Saves a point in your history</div>
-    </div>
-    <button class="snapshot-btn" id="snapshotBtn">Save snapshot</button>
-  </section>
-
   <section class="history">
     <h2>History</h2>
     <div class="hist-rows" id="histRows"></div>
   </section>
 
-  <footer class="note">Stored privately, only visible to you.<br/>Add this page to your Home Screen for one-tap access.</footer>
+  <section class="snapshot-bar">
+    <div class="txt">
+      <div class="t">Record a balance</div>
+      <div class="s" id="snapshotSub">Saves a point in your history</div>
+      <input type="date" id="snapshotDate" class="date-input" />
+    </div>
+    <button class="snapshot-btn" id="snapshotBtn">Save snapshot</button>
+  </section>
+
+  <footer class="note">Stored privately on this device, only visible to you.<br/>Add this page to your Home Screen for one-tap access.</footer>
 
 </div>
 
@@ -276,7 +277,13 @@
 const fmt = (n) => {
   const neg = n < 0;
   const v = Math.abs(Math.round(n));
-  const s = '$' + v.toLocaleString('en-US');
+  const s = v.toString() + '€';
+  return neg ? '-' + s : s;
+};
+const fmtPlain = (n) => {
+  const neg = n < 0;
+  const v = Math.abs(Math.round(n));
+  const s = v.toString();
   return neg ? '-' + s : s;
 };
 
@@ -285,22 +292,22 @@ let snapshots = [];
 
 async function loadData(){
   try{
-    const a = await window.storage.get('accounts', false);
-    accounts = a ? JSON.parse(a.value) : [];
+    const a = localStorage.getItem('ledger_accounts');
+    accounts = a ? JSON.parse(a) : [];
   }catch(e){ accounts = []; }
   try{
-    const s = await window.storage.get('snapshots', false);
-    snapshots = s ? JSON.parse(s.value) : [];
+    const s = localStorage.getItem('ledger_snapshots');
+    snapshots = s ? JSON.parse(s) : [];
   }catch(e){ snapshots = []; }
   render();
 }
 
 async function saveAccounts(){
-  try{ await window.storage.set('accounts', JSON.stringify(accounts), false); }
+  try{ localStorage.setItem('ledger_accounts', JSON.stringify(accounts)); }
   catch(e){ console.error('save accounts failed', e); }
 }
 async function saveSnapshots(){
-  try{ await window.storage.set('snapshots', JSON.stringify(snapshots), false); }
+  try{ localStorage.setItem('ledger_snapshots', JSON.stringify(snapshots)); }
   catch(e){ console.error('save snapshots failed', e); }
 }
 
@@ -349,21 +356,74 @@ function renderRows(type, containerId){
   });
 }
 
-function renderSparkline(){
-  const svg = document.getElementById('sparkline');
-  if(snapshots.length < 2){ svg.innerHTML = ''; return; }
-  const vals = snapshots.map(s=>s.netWorth);
-  const min = Math.min(...vals), max = Math.max(...vals);
+function renderChart(){
+  const svg = document.getElementById('chart');
+  const labels = document.getElementById('chartLabels');
+  const sorted = [...snapshots].sort((a,b)=> new Date(a.date) - new Date(b.date));
+
+  if(sorted.length < 2){
+    svg.innerHTML = `<text x="160" y="80" text-anchor="middle" fill="#8F96A3" font-family="IBM Plex Mono, monospace" font-size="11">Save at least 2 snapshots to see a chart</text>`;
+    labels.innerHTML = '';
+    return;
+  }
+
+  const w = 320, h = 160, padL = 4, padR = 4, padT = 10, padB = 10;
+  const netVals = sorted.map(s=>s.netWorth);
+  const assetVals = sorted.map(s=>s.assetsTotal);
+  const liabVals = sorted.map(s=>s.liabilitiesTotal);
+  const allVals = [...netVals, ...assetVals, ...liabVals, 0];
+  const min = Math.min(...allVals);
+  const max = Math.max(...allVals);
   const range = (max - min) || 1;
-  const w = 100, h = 30, pad = 2;
-  const pts = vals.map((v,i)=>{
-    const x = (i/(vals.length-1)) * (w - pad*2) + pad;
-    const y = h - pad - ((v - min)/range) * (h - pad*2);
-    return `${x.toFixed(2)},${y.toFixed(2)}`;
-  }).join(' ');
-  const lastUp = vals[vals.length-1] >= vals[0];
-  svg.innerHTML = `<polyline points="${pts}" fill="none" stroke="${lastUp?'#C9A15C':'#B5584A'}" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>`;
+
+  const xFor = (i)=> padL + (i/(sorted.length-1)) * (w - padL - padR);
+  const yFor = (v)=> h - padB - ((v - min)/range) * (h - padT - padB);
+  const lineFor = (vals)=> vals.map((v,i)=> `${xFor(i).toFixed(1)},${yFor(v).toFixed(1)}`).join(' ');
+
+  const netLinePts = lineFor(netVals);
+  const areaPts = `${padL},${yFor(min).toFixed(1)} ` + netLinePts + ` ${xFor(sorted.length-1).toFixed(1)},${yFor(min).toFixed(1)}`;
+
+  const goldColor = '#C9A15C';
+  const burgundyColor = '#B5584A';
+  const netColor = '#EDE6D6';
+
+  let grid = '';
+  const guideCount = 4;
+  for(let i=0;i<=guideCount;i++){
+    const gy = padT + (i/guideCount) * (h - padT - padB);
+    grid += `<line x1="${padL}" y1="${gy.toFixed(1)}" x2="${w-padR}" y2="${gy.toFixed(1)}" stroke="rgba(237,230,214,0.08)" stroke-width="1"/>`;
+  }
+  if(min < 0 && max > 0){
+    const zy = yFor(0);
+    grid += `<line x1="${padL}" y1="${zy.toFixed(1)}" x2="${w-padR}" y2="${zy.toFixed(1)}" stroke="rgba(237,230,214,0.22)" stroke-width="1" stroke-dasharray="3,3"/>`;
+  }
+
+  const dotsFor = (vals, color)=> vals.map((v,i)=> `<circle cx="${xFor(i).toFixed(1)}" cy="${yFor(v).toFixed(1)}" r="2.2" fill="${color}"/>`).join('');
+
+  svg.innerHTML = `
+    ${grid}
+    <polygon points="${areaPts}" fill="${netColor}" fill-opacity="0.08" stroke="none"/>
+    <polyline points="${lineFor(assetVals)}" fill="none" stroke="${goldColor}" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+    <polyline points="${lineFor(liabVals)}" fill="none" stroke="${burgundyColor}" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+    <polyline points="${netLinePts}" fill="none" stroke="${netColor}" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+    ${dotsFor(assetVals, goldColor)}
+    ${dotsFor(liabVals, burgundyColor)}
+    ${dotsFor(netVals, netColor)}
+  `;
+
+  const first = sorted[0], last = sorted[sorted.length-1];
+  const fmtShort = (d)=> new Date(d).toLocaleDateString('de-DE', {month:'short', day:'numeric'});
+  labels.innerHTML = `
+    <div class="chart-legend">
+      <span class="legend-item"><i style="background:${netColor}"></i>Net Worth</span>
+      <span class="legend-item"><i style="background:${goldColor}"></i>Assets</span>
+      <span class="legend-item"><i style="background:${burgundyColor}"></i>Liabilities</span>
+    </div>
+    <div class="chart-dates"><span>${fmtShort(first.date)}</span><span>${fmtShort(last.date)}</span></div>
+  `;
 }
+
+
 
 function renderHistory(){
   const container = document.getElementById('histRows');
@@ -375,12 +435,12 @@ function renderHistory(){
   container.innerHTML = '';
   sorted.forEach(snap=>{
     const d = new Date(snap.date);
-    const dstr = d.toLocaleDateString('en-US', {month:'short', day:'numeric', year:'numeric'});
+    const dstr = d.toLocaleDateString('de-DE', {month:'short', day:'numeric', year:'numeric'});
     const row = document.createElement('div');
     row.className = 'hist-row';
     row.innerHTML = `
       <span class="d">${dstr}</span>
-      <span class="n">${fmt(snap.netWorth)}</span>
+      <span class="n">${fmtPlain(snap.netWorth)}</span>
       <button class="del" data-id="${snap.id}" title="Delete snapshot" aria-label="Delete snapshot">×</button>
     `;
     container.appendChild(row);
@@ -403,40 +463,26 @@ function escapeHtml(str){
 function render(){
   const { assetsTotal, liabTotal, netWorth } = totals();
   document.getElementById('netWorthFigure').textContent = fmt(netWorth);
-  document.getElementById('assetsTotal').textContent = fmt(assetsTotal);
-  document.getElementById('liabilitiesTotal').textContent = fmt(liabTotal);
-
-  const deltaEl = document.getElementById('netWorthDelta');
-  if(snapshots.length===0){
-    deltaEl.textContent = 'no history yet';
-    deltaEl.className = 'delta flat';
-  } else {
-    const last = [...snapshots].sort((a,b)=>new Date(b.date)-new Date(a.date))[0];
-    const diff = netWorth - last.netWorth;
-    if(Math.abs(diff) < 1){
-      deltaEl.textContent = 'unchanged since last snapshot';
-      deltaEl.className = 'delta flat';
-    } else {
-      deltaEl.textContent = (diff>0?'+':'') + fmt(diff) + ' since last snapshot';
-      deltaEl.className = 'delta ' + (diff>0?'up':'down');
-    }
-  }
+  document.getElementById('assetsTotal').textContent = fmtPlain(assetsTotal);
+  document.getElementById('liabilitiesTotal').textContent = fmtPlain(liabTotal);
 
   renderRows('asset','assetsRows');
   renderRows('liability','liabilitiesRows');
-  renderSparkline();
+  renderChart();
   renderHistory();
 
   const btn = document.getElementById('snapshotBtn');
   const sub = document.getElementById('snapshotSub');
+  const dateInput = document.getElementById('snapshotDate');
   if(accounts.length===0){
     btn.disabled = true;
     sub.textContent = 'Add an account first';
   } else {
     btn.disabled = false;
-    const today = new Date().toDateString();
-    const already = snapshots.some(s=> new Date(s.date).toDateString() === today);
-    sub.textContent = already ? "Today's snapshot already saved — saving again will update it" : "Saves a point in your history";
+    const picked = dateInput && dateInput.value ? new Date(dateInput.value + 'T12:00:00') : new Date();
+    const pickedStr = picked.toDateString();
+    const already = snapshots.some(s=> new Date(s.date).toDateString() === pickedStr);
+    sub.textContent = already ? "A snapshot for this date already exists — saving again will update it" : "Saves a point in your history for the selected date";
   }
 }
 
@@ -476,11 +522,13 @@ document.getElementById('liabSave').addEventListener('click', async ()=>{
 
 document.getElementById('snapshotBtn').addEventListener('click', async ()=>{
   const { assetsTotal, liabTotal, netWorth } = totals();
-  const today = new Date().toDateString();
-  const existingIdx = snapshots.findIndex(s=> new Date(s.date).toDateString() === today);
+  const dateInput = document.getElementById('snapshotDate');
+  const picked = dateInput.value ? new Date(dateInput.value + 'T12:00:00') : new Date();
+  const pickedStr = picked.toDateString();
+  const existingIdx = snapshots.findIndex(s=> new Date(s.date).toDateString() === pickedStr);
   const snap = {
     id: existingIdx>-1 ? snapshots[existingIdx].id : 'snap_'+Date.now(),
-    date: new Date().toISOString(),
+    date: picked.toISOString(),
     assetsTotal, liabilitiesTotal: liabTotal, netWorth
   };
   if(existingIdx>-1){ snapshots[existingIdx] = snap; } else { snapshots.push(snap); }
@@ -488,7 +536,13 @@ document.getElementById('snapshotBtn').addEventListener('click', async ()=>{
   render();
 });
 
-document.getElementById('todayDate').textContent = new Date().toLocaleDateString('en-US', {weekday:'short', month:'short', day:'numeric'});
+const snapshotDateInput = document.getElementById('snapshotDate');
+const todayISO = new Date().toISOString().slice(0,10);
+snapshotDateInput.value = todayISO;
+snapshotDateInput.max = todayISO;
+snapshotDateInput.addEventListener('change', render);
+
+
 
 loadData();
 </script>
