@@ -185,6 +185,11 @@
   }
   .snapshot-btn:hover{filter:brightness(0.95);}
   .snapshot-btn:disabled{opacity:0.5;cursor:default;}
+  .snapshot-btn.secondary{
+    background:transparent;color:var(--text);border:1px solid var(--line-strong);
+  }
+  .snapshot-btn.secondary:hover{border-color:var(--gold-dim);filter:none;}
+  .load-bar{margin-top:-14px;}
 
   /* History */
   .chart-section{margin-bottom:34px;}
@@ -392,6 +397,15 @@
         <input type="date" id="snapshotDate" class="date-input" />
       </div>
       <button class="snapshot-btn" id="snapshotBtn">Save snapshot</button>
+    </section>
+
+    <section class="snapshot-bar load-bar">
+      <div class="txt">
+        <div class="t">Load a balance</div>
+        <div class="s" id="loadSub">Pick a date to load its snapshot into Assets &amp; Liabilities</div>
+        <input type="date" id="loadDate" class="date-input" />
+      </div>
+      <button class="snapshot-btn secondary" id="loadBtn">Load</button>
     </section>
 
     <section class="backup-section">
@@ -918,6 +932,7 @@ function render(){
   renderMiniChart('liabilitiesChart', 'liabilitiesTotal', '#B5584A');
   populateAccountSelect();
   renderAccountHistoryChart();
+  if(document.getElementById('loadDate')) updateLoadSub();
   renderHistory();
 
   const btn = document.getElementById('snapshotBtn');
@@ -991,6 +1006,53 @@ const todayISO = new Date().toISOString().slice(0,10);
 snapshotDateInput.value = todayISO;
 snapshotDateInput.max = todayISO;
 snapshotDateInput.addEventListener('change', render);
+
+const loadDateInput = document.getElementById('loadDate');
+loadDateInput.value = todayISO;
+loadDateInput.max = todayISO;
+loadDateInput.addEventListener('change', updateLoadSub);
+
+function updateLoadSub(){
+  const sub = document.getElementById('loadSub');
+  if(!loadDateInput.value){
+    sub.textContent = "Pick a date to load its snapshot into Assets & Liabilities";
+    return;
+  }
+  const picked = new Date(loadDateInput.value + 'T12:00:00');
+  const pickedStr = picked.toDateString();
+  const snap = snapshots.find(s=> new Date(s.date).toDateString() === pickedStr);
+  if(!snap){
+    sub.textContent = "No snapshot saved for this date";
+  } else if(!Array.isArray(snap.accounts) || snap.accounts.length===0){
+    sub.textContent = "This snapshot has totals only, no per-account detail";
+  } else {
+    sub.textContent = `Snapshot found — ${snap.accounts.length} account(s) will be loaded`;
+  }
+}
+
+document.getElementById('loadBtn').addEventListener('click', async ()=>{
+  if(!loadDateInput.value){ alert('Pick a date first.'); return; }
+  const picked = new Date(loadDateInput.value + 'T12:00:00');
+  const pickedStr = picked.toDateString();
+  const snap = snapshots.find(s=> new Date(s.date).toDateString() === pickedStr);
+  if(!snap){ alert('No snapshot found for that date.'); return; }
+  if(!Array.isArray(snap.accounts) || snap.accounts.length===0){
+    alert('This snapshot only has totals saved, no per-account balances to load.');
+    return;
+  }
+  const dLabel = picked.toLocaleDateString('de-DE', {month:'short', day:'numeric', year:'numeric'});
+  if(!confirm(`Load balances from ${dLabel}? This will overwrite your current Assets & Liabilities numbers.`)) return;
+
+  let updated = 0;
+  snap.accounts.forEach(sa=>{
+    const acc = accounts.find(a=>a.id===sa.id);
+    if(acc){ acc.balance = sa.balance; updated++; }
+  });
+  await saveAccounts();
+  render();
+  updateLoadSub();
+  alert(`Loaded ${updated} account balance(s) from ${dLabel}.`);
+});
 
 document.getElementById('accountHistorySelect').addEventListener('change', renderAccountHistoryChart);
 
