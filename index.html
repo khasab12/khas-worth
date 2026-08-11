@@ -410,6 +410,9 @@ function renderRows(type, containerId){
   container.querySelectorAll('.del').forEach(btn=>{
     btn.addEventListener('click', async (e)=>{
       const id = e.target.dataset.id;
+      const acc = accounts.find(a=>a.id===id);
+      const label = acc ? acc.name : 'this entry';
+      if(!confirm(`Delete "${label}"? This can't be undone.`)) return;
       accounts = accounts.filter(a=>a.id!==id);
       await saveAccounts(); render();
     });
@@ -544,6 +547,9 @@ function renderHistory(){
   container.querySelectorAll('.del').forEach(btn=>{
     btn.addEventListener('click', async (e)=>{
       const id = e.target.dataset.id;
+      const snap = snapshots.find(s=>s.id===id);
+      const dLabel = snap ? new Date(snap.date).toLocaleDateString('de-DE', {month:'short', day:'numeric', year:'numeric'}) : 'this snapshot';
+      if(!confirm(`Delete the snapshot from ${dLabel}? This can't be undone.`)) return;
       snapshots = snapshots.filter(s=>s.id!==id);
       await saveSnapshots(); render();
     });
