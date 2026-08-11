@@ -90,8 +90,13 @@
     padding:12px 0;border-bottom:1px solid var(--line);
     gap:10px;
   }
-  .row .meta{min-width:0;}
-  .row .name{font-size:14.5px;font-weight:500;color:var(--text);}
+  .row .meta{min-width:0;flex:1;}
+  .row .name-input{
+    font-family:'IBM Plex Sans', sans-serif;font-size:14.5px;font-weight:500;color:var(--text);
+    background:transparent;border:none;border-bottom:1px solid transparent;
+    padding:2px 0;width:100%;max-width:100%;
+  }
+  .row .name-input:focus{outline:none;border-bottom:1px solid var(--line-strong);}
   .row .cat{font-family:'IBM Plex Mono', monospace;font-size:10.5px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.06em;margin-top:2px;}
   .row .right{display:flex;align-items:center;gap:10px;flex-shrink:0;}
   .row .balance{
@@ -370,6 +375,7 @@ const fmtPlain = (n) => {
   const s = v.toString();
   return neg ? '-' + s : s;
 };
+const fmtAxis = (n) => Math.round(n).toString();
 
 let accounts = [];
 let snapshots = [];
@@ -414,7 +420,7 @@ function renderRows(type, containerId){
     row.className = 'row';
     row.innerHTML = `
       <div class="meta">
-        <div class="name">${escapeHtml(acc.name)}</div>
+        <input class="name-input" type="text" value="${escapeHtml(acc.name)}" data-id="${acc.id}" aria-label="Rename" />
         <div class="cat">${escapeHtml(acc.category)}</div>
       </div>
       <div class="right">
@@ -423,6 +429,20 @@ function renderRows(type, containerId){
       </div>
     `;
     container.appendChild(row);
+  });
+  container.querySelectorAll('.name-input').forEach(inp=>{
+    inp.addEventListener('change', async (e)=>{
+      const id = e.target.dataset.id;
+      const acc = accounts.find(a=>a.id===id);
+      const newName = e.target.value.trim();
+      if(acc && newName){
+        acc.name = newName;
+        await saveAccounts();
+        render();
+      } else if(acc){
+        e.target.value = acc.name; // revert if left blank
+      }
+    });
   });
   container.querySelectorAll('.balance').forEach(inp=>{
     inp.addEventListener('change', async (e)=>{
@@ -454,7 +474,7 @@ function renderChart(){
     return;
   }
 
-  const w = 320, h = 160, padL = 4, padR = 4, padT = 10, padB = 10;
+  const w = 320, h = 160, padL = 40, padR = 4, padT = 10, padB = 10;
   const netVals = sorted.map(s=>s.netWorth);
   const assetVals = sorted.map(s=>s.assetsTotal);
   const liabVals = sorted.map(s=>s.liabilitiesTotal);
@@ -475,10 +495,13 @@ function renderChart(){
   const netColor = '#EDE6D6';
 
   let grid = '';
+  let axisLabels = '';
   const guideCount = 4;
   for(let i=0;i<=guideCount;i++){
     const gy = padT + (i/guideCount) * (h - padT - padB);
+    const val = max - (i/guideCount) * range;
     grid += `<line x1="${padL}" y1="${gy.toFixed(1)}" x2="${w-padR}" y2="${gy.toFixed(1)}" stroke="rgba(237,230,214,0.08)" stroke-width="1"/>`;
+    axisLabels += `<text x="${padL-6}" y="${(gy+3).toFixed(1)}" text-anchor="end" fill="#8F96A3" font-family="IBM Plex Mono, monospace" font-size="8.5">${fmtAxis(val)}</text>`;
   }
   if(min < 0 && max > 0){
     const zy = yFor(0);
@@ -489,6 +512,7 @@ function renderChart(){
 
   svg.innerHTML = `
     ${grid}
+    ${axisLabels}
     <polygon points="${areaPts}" fill="${netColor}" fill-opacity="0.08" stroke="none"/>
     <polyline points="${lineFor(assetVals)}" fill="none" stroke="${goldColor}" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
     <polyline points="${lineFor(liabVals)}" fill="none" stroke="${burgundyColor}" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
@@ -562,7 +586,7 @@ function renderAccountHistoryChart(){
   const vals = sorted.map(s=> s.accounts.find(sa=>sa.id===accountId).balance);
   const color = acc.type==='asset' ? '#C9A15C' : '#B5584A';
 
-  const w = 320, h = 110, padL = 4, padR = 4, padT = 8, padB = 8;
+  const w = 320, h = 110, padL = 38, padR = 4, padT = 8, padB = 8;
   const min = Math.min(...vals, 0);
   const max = Math.max(...vals, 0);
   const range = (max - min) || 1;
@@ -573,15 +597,19 @@ function renderAccountHistoryChart(){
   const areaPts = `${padL},${yFor(min).toFixed(1)} ` + linePts + ` ${xFor(sorted.length-1).toFixed(1)},${yFor(min).toFixed(1)}`;
 
   let grid = '';
+  let axisLabels = '';
   for(let i=0;i<=3;i++){
     const gy = padT + (i/3) * (h - padT - padB);
+    const val = max - (i/3) * range;
     grid += `<line x1="${padL}" y1="${gy.toFixed(1)}" x2="${w-padR}" y2="${gy.toFixed(1)}" stroke="rgba(237,230,214,0.08)" stroke-width="1"/>`;
+    axisLabels += `<text x="${padL-6}" y="${(gy+3).toFixed(1)}" text-anchor="end" fill="#8F96A3" font-family="IBM Plex Mono, monospace" font-size="8.5">${fmtAxis(val)}</text>`;
   }
 
   const dots = vals.map((v,i)=> `<circle cx="${xFor(i).toFixed(1)}" cy="${yFor(v).toFixed(1)}" r="2" fill="${color}"/>`).join('');
 
   svg.innerHTML = `
     ${grid}
+    ${axisLabels}
     <polygon points="${areaPts}" fill="${color}" fill-opacity="0.12" stroke="none"/>
     <polyline points="${linePts}" fill="none" stroke="${color}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
     ${dots}
@@ -597,7 +625,7 @@ function renderMiniChart(svgId, valueKey, color){
     return;
   }
 
-  const w = 320, h = 90, padL = 4, padR = 4, padT = 8, padB = 8;
+  const w = 320, h = 90, padL = 38, padR = 4, padT = 8, padB = 8;
   const vals = sorted.map(s=> s[valueKey]);
   const min = Math.min(...vals, 0);
   const max = Math.max(...vals, 0);
@@ -609,15 +637,19 @@ function renderMiniChart(svgId, valueKey, color){
   const areaPts = `${padL},${yFor(min).toFixed(1)} ` + linePts + ` ${xFor(sorted.length-1).toFixed(1)},${yFor(min).toFixed(1)}`;
 
   let grid = '';
+  let axisLabels = '';
   for(let i=0;i<=3;i++){
     const gy = padT + (i/3) * (h - padT - padB);
+    const val = max - (i/3) * range;
     grid += `<line x1="${padL}" y1="${gy.toFixed(1)}" x2="${w-padR}" y2="${gy.toFixed(1)}" stroke="rgba(237,230,214,0.08)" stroke-width="1"/>`;
+    axisLabels += `<text x="${padL-6}" y="${(gy+3).toFixed(1)}" text-anchor="end" fill="#8F96A3" font-family="IBM Plex Mono, monospace" font-size="8.5">${fmtAxis(val)}</text>`;
   }
 
   const dots = vals.map((v,i)=> `<circle cx="${xFor(i).toFixed(1)}" cy="${yFor(v).toFixed(1)}" r="2" fill="${color}"/>`).join('');
 
   svg.innerHTML = `
     ${grid}
+    ${axisLabels}
     <polygon points="${areaPts}" fill="${color}" fill-opacity="0.12" stroke="none"/>
     <polyline points="${linePts}" fill="none" stroke="${color}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
     ${dots}
