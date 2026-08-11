@@ -91,12 +91,12 @@
     gap:10px;
   }
   .row .meta{min-width:0;flex:1;}
-  .row .name-input{
-    font-family:'IBM Plex Sans', sans-serif;font-size:14.5px;font-weight:500;color:var(--text);
-    background:transparent;border:none;border-bottom:1px solid transparent;
-    padding:2px 0;width:100%;max-width:100%;
+  .row .name-btn{
+    background:none;border:none;padding:0;margin:0;text-align:left;cursor:pointer;
+    display:block;width:100%;
   }
-  .row .name-input:focus{outline:none;border-bottom:1px solid var(--line-strong);}
+  .row .name-btn .name{font-size:14.5px;font-weight:500;color:var(--text);}
+  .row .name-btn:hover .name{color:var(--gold);}
   .row .cat{font-family:'IBM Plex Mono', monospace;font-size:10.5px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.06em;margin-top:2px;}
   .row .right{display:flex;align-items:center;gap:10px;flex-shrink:0;}
   .row .balance{
@@ -238,6 +238,51 @@
   }
 
   ::selection{background:var(--gold-dim);color:var(--paper);}
+
+  /* Account detail modal */
+  .modal-overlay{
+    display:none;position:fixed;inset:0;background:rgba(6,10,16,0.72);
+    z-index:100;align-items:flex-end;justify-content:center;
+  }
+  .modal-overlay.open{display:flex;}
+  .modal-panel{
+    background:var(--ink-800);border-top:1px solid var(--line-strong);
+    border-radius:16px 16px 0 0;padding:20px 18px 28px;
+    width:100%;max-width:520px;max-height:88vh;overflow-y:auto;
+    animation:modalUp 0.18s ease-out;
+  }
+  @keyframes modalUp{from{transform:translateY(16px);opacity:0;}to{transform:translateY(0);opacity:1;}}
+  .modal-header{display:flex;align-items:center;gap:10px;margin-bottom:2px;}
+  .modal-name-input{
+    flex:1;min-width:0;background:transparent;border:none;border-bottom:1px solid var(--line-strong);
+    font-family:'Fraunces', serif;font-weight:500;font-size:20px;color:var(--text);
+    padding:4px 0;
+  }
+  .modal-name-input:focus{outline:none;border-bottom:1px solid var(--gold);}
+  .modal-close{
+    background:none;border:none;color:var(--text-muted);font-size:22px;line-height:1;
+    padding:4px 6px;cursor:pointer;flex-shrink:0;
+  }
+  .modal-close:hover{color:var(--text);}
+  .modal-cat{
+    font-family:'IBM Plex Mono', monospace;font-size:10.5px;color:var(--text-muted);
+    text-transform:uppercase;letter-spacing:0.06em;margin:6px 0 18px;
+  }
+  .modal-balance-row{
+    display:flex;justify-content:space-between;align-items:center;
+    padding:12px 0;border-top:1px solid var(--line);border-bottom:1px solid var(--line);
+    margin-bottom:18px;
+  }
+  .modal-balance-label{font-size:13px;color:var(--text-muted);}
+  .modal-balance-input{
+    font-family:'IBM Plex Mono', monospace;font-size:17px;font-variant-numeric:tabular-nums;
+    background:transparent;border:none;color:var(--text);text-align:right;width:130px;
+    border-bottom:1px solid transparent;padding:2px 0;
+  }
+  .modal-balance-input:focus{outline:none;border-bottom:1px solid var(--line-strong);}
+  .modal-hist-title{
+    font-family:'Fraunces', serif;font-weight:500;font-size:14.5px;margin:20px 0 4px;
+  }
 </style>
 </head>
 <body>
@@ -362,6 +407,28 @@
 
 </div>
 
+<div class="modal-overlay" id="accountModalOverlay">
+  <div class="modal-panel">
+    <div class="modal-header">
+      <input type="text" id="modalNameInput" class="modal-name-input" aria-label="Rename account" />
+      <button class="modal-close" id="modalCloseBtn" aria-label="Close">×</button>
+    </div>
+    <div class="modal-cat" id="modalCat"></div>
+
+    <div class="modal-balance-row">
+      <span class="modal-balance-label">Current balance</span>
+      <input type="number" id="modalBalanceInput" class="modal-balance-input" inputmode="decimal" />
+    </div>
+
+    <div class="mini-chart-wrap">
+      <svg class="mini-chart" id="modalChart" viewBox="0 0 320 120" preserveAspectRatio="none"></svg>
+    </div>
+
+    <h3 class="modal-hist-title">Snapshot History</h3>
+    <div class="hist-rows" id="modalHistRows"></div>
+  </div>
+</div>
+
 <script>
 const fmt = (n) => {
   const neg = n < 0;
@@ -420,7 +487,7 @@ function renderRows(type, containerId){
     row.className = 'row';
     row.innerHTML = `
       <div class="meta">
-        <input class="name-input" type="text" value="${escapeHtml(acc.name)}" data-id="${acc.id}" aria-label="Rename" />
+        <button class="name-btn" data-id="${acc.id}"><span class="name">${escapeHtml(acc.name)}</span></button>
         <div class="cat">${escapeHtml(acc.category)}</div>
       </div>
       <div class="right">
@@ -430,18 +497,10 @@ function renderRows(type, containerId){
     `;
     container.appendChild(row);
   });
-  container.querySelectorAll('.name-input').forEach(inp=>{
-    inp.addEventListener('change', async (e)=>{
-      const id = e.target.dataset.id;
-      const acc = accounts.find(a=>a.id===id);
-      const newName = e.target.value.trim();
-      if(acc && newName){
-        acc.name = newName;
-        await saveAccounts();
-        render();
-      } else if(acc){
-        e.target.value = acc.name; // revert if left blank
-      }
+  container.querySelectorAll('.name-btn').forEach(btn=>{
+    btn.addEventListener('click', (e)=>{
+      const id = e.currentTarget.dataset.id;
+      openAccountModal(id);
     });
   });
   container.querySelectorAll('.balance').forEach(inp=>{
@@ -561,6 +620,101 @@ function populateAccountSelect(){
   if(prevValue && accounts.some(a=>a.id===prevValue)){
     sel.value = prevValue;
   }
+}
+
+let currentModalAccountId = null;
+
+function openAccountModal(accountId){
+  currentModalAccountId = accountId;
+  renderAccountModal();
+  document.getElementById('accountModalOverlay').classList.add('open');
+}
+
+function closeAccountModal(){
+  document.getElementById('accountModalOverlay').classList.remove('open');
+  currentModalAccountId = null;
+}
+
+function renderAccountModal(){
+  const acc = accounts.find(a=>a.id===currentModalAccountId);
+  if(!acc){ closeAccountModal(); return; }
+
+  document.getElementById('modalNameInput').value = acc.name;
+  document.getElementById('modalCat').textContent = acc.category + ' · ' + (acc.type==='asset' ? 'Asset' : 'Liability');
+  document.getElementById('modalBalanceInput').value = acc.balance;
+
+  renderModalChart(acc);
+  renderModalHistory(acc);
+}
+
+function renderModalChart(acc){
+  const svg = document.getElementById('modalChart');
+  const sorted = [...snapshots]
+    .filter(s=> Array.isArray(s.accounts) && s.accounts.some(sa=>sa.id===acc.id))
+    .sort((a,b)=> new Date(a.date) - new Date(b.date));
+
+  if(sorted.length < 2){
+    svg.innerHTML = `<text x="160" y="60" text-anchor="middle" fill="#8F96A3" font-family="IBM Plex Mono, monospace" font-size="10">Save 2+ snapshots to see this account's history</text>`;
+    return;
+  }
+
+  const vals = sorted.map(s=> s.accounts.find(sa=>sa.id===acc.id).balance);
+  const color = acc.type==='asset' ? '#C9A15C' : '#B5584A';
+
+  const w = 320, h = 120, padL = 40, padR = 4, padT = 8, padB = 8;
+  const min = Math.min(...vals, 0);
+  const max = Math.max(...vals, 0);
+  const range = (max - min) || 1;
+
+  const xFor = (i)=> padL + (i/(sorted.length-1)) * (w - padL - padR);
+  const yFor = (v)=> h - padB - ((v - min)/range) * (h - padT - padB);
+  const linePts = vals.map((v,i)=> `${xFor(i).toFixed(1)},${yFor(v).toFixed(1)}`).join(' ');
+  const areaPts = `${padL},${yFor(min).toFixed(1)} ` + linePts + ` ${xFor(sorted.length-1).toFixed(1)},${yFor(min).toFixed(1)}`;
+
+  let grid = '';
+  let axisLabels = '';
+  for(let i=0;i<=3;i++){
+    const gy = padT + (i/3) * (h - padT - padB);
+    const val = max - (i/3) * range;
+    grid += `<line x1="${padL}" y1="${gy.toFixed(1)}" x2="${w-padR}" y2="${gy.toFixed(1)}" stroke="rgba(237,230,214,0.08)" stroke-width="1"/>`;
+    axisLabels += `<text x="${padL-6}" y="${(gy+3).toFixed(1)}" text-anchor="end" fill="#8F96A3" font-family="IBM Plex Mono, monospace" font-size="8.5">${fmtAxis(val)}</text>`;
+  }
+
+  const dots = vals.map((v,i)=> `<circle cx="${xFor(i).toFixed(1)}" cy="${yFor(v).toFixed(1)}" r="2.2" fill="${color}"/>`).join('');
+
+  svg.innerHTML = `
+    ${grid}
+    ${axisLabels}
+    <polygon points="${areaPts}" fill="${color}" fill-opacity="0.12" stroke="none"/>
+    <polyline points="${linePts}" fill="none" stroke="${color}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+    ${dots}
+  `;
+}
+
+function renderModalHistory(acc){
+  const container = document.getElementById('modalHistRows');
+  const sorted = [...snapshots]
+    .filter(s=> Array.isArray(s.accounts) && s.accounts.some(sa=>sa.id===acc.id))
+    .sort((a,b)=> new Date(b.date) - new Date(a.date));
+
+  if(sorted.length===0){
+    container.innerHTML = `<div class="empty">No snapshots include this account yet.</div>`;
+    return;
+  }
+
+  container.innerHTML = '';
+  sorted.forEach(snap=>{
+    const bal = snap.accounts.find(sa=>sa.id===acc.id).balance;
+    const d = new Date(snap.date);
+    const dstr = d.toLocaleDateString('de-DE', {month:'short', day:'numeric', year:'numeric'});
+    const row = document.createElement('div');
+    row.className = 'hist-row';
+    row.innerHTML = `
+      <span class="d">${dstr}</span>
+      <span class="n">${fmtPlain(bal)}</span>
+    `;
+    container.appendChild(row);
+  });
 }
 
 function renderAccountHistoryChart(){
@@ -895,6 +1049,34 @@ document.getElementById('jsonFileInput').addEventListener('change', (e)=>{
     e.target.value = '';
   };
   reader.readAsText(file);
+});
+
+document.getElementById('modalCloseBtn').addEventListener('click', closeAccountModal);
+document.getElementById('accountModalOverlay').addEventListener('click', (e)=>{
+  if(e.target.id === 'accountModalOverlay') closeAccountModal();
+});
+
+document.getElementById('modalNameInput').addEventListener('change', async (e)=>{
+  const acc = accounts.find(a=>a.id===currentModalAccountId);
+  const newName = e.target.value.trim();
+  if(acc && newName){
+    acc.name = newName;
+    await saveAccounts();
+    render();
+    renderAccountModal();
+  } else if(acc){
+    e.target.value = acc.name;
+  }
+});
+
+document.getElementById('modalBalanceInput').addEventListener('change', async (e)=>{
+  const acc = accounts.find(a=>a.id===currentModalAccountId);
+  if(acc){
+    acc.balance = Number(e.target.value) || 0;
+    await saveAccounts();
+    render();
+    renderAccountModal();
+  }
 });
 
 loadData();
