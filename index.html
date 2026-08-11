@@ -84,7 +84,7 @@
   .ledger.assets .ledger-head .total{color:var(--gold);}
   .ledger.liabilities .ledger-head .total{color:var(--burgundy);}
 
-  .rows{border-top:1px solid var(--line);margin-top:10px;}
+  .rows{margin-top:10px;padding-left:15px;border-left:1px solid var(--line);}
   .row{
     display:flex;align-items:center;justify-content:space-between;
     padding:12px 0;border-bottom:1px solid var(--line);
@@ -237,6 +237,30 @@
     text-align:center;color:var(--text-muted);font-size:11px;margin-top:8px;line-height:1.6;
   }
 
+  body{padding-bottom:76px;}
+
+  .bottom-nav{
+    position:fixed;bottom:0;left:0;right:0;
+    background:var(--ink-800);border-top:1px solid var(--line-strong);
+    display:flex;justify-content:center;gap:8px;
+    padding:10px 16px calc(10px + env(safe-area-inset-bottom));
+    z-index:90;
+  }
+  .nav-btn{
+    flex:1;max-width:220px;background:none;border:none;color:var(--text-muted);
+    font-family:'IBM Plex Sans', sans-serif;font-weight:500;font-size:13.5px;
+    padding:10px 12px;border-radius:9px;cursor:pointer;
+  }
+  .nav-btn.active{background:var(--paper);color:var(--ink-900);}
+
+  .mini-chart-section{margin-bottom:28px;}
+  .mini-chart-section .ledger-head{margin-bottom:2px;}
+  .mini-chart-title{
+    font-family:'Fraunces', serif;font-weight:500;font-size:15.5px;margin:0;
+  }
+  .mini-chart-title.assets-title::before{content:'';display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--gold);margin-right:8px;vertical-align:middle;}
+  .mini-chart-title.liabilities-title::before{content:'';display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--burgundy);margin-right:8px;vertical-align:middle;}
+
   ::selection{background:var(--gold-dim);color:var(--paper);}
 
   /* Account detail modal */
@@ -288,124 +312,152 @@
 <body>
 <div class="app">
 
-  <section class="hero">
-    <div class="label">Net Worth</div>
-    <div class="figure" id="netWorthFigure">0€</div>
-  </section>
+  <div class="tab-panel" id="tabNetWorth">
 
-  <section class="chart-section">
-    <div class="chart-wrap">
-      <svg class="chart" id="chart" viewBox="0 0 320 160" preserveAspectRatio="none"></svg>
-      <div class="chart-labels" id="chartLabels"></div>
-    </div>
-  </section>
+    <section class="hero">
+      <div class="label">Net Worth</div>
+      <div class="figure" id="netWorthFigure">0,00 €</div>
+    </section>
 
-  <section class="ledger assets">
-    <div class="ledger-head">
-      <h2>Assets</h2>
-      <div class="total" id="assetsTotal">0</div>
-    </div>
-    <div class="rows" id="assetsRows"></div>
-    <div class="add-row">
-      <button class="add-toggle" id="assetsToggle">+ add an asset</button>
-      <div class="add-form" id="assetsForm">
-        <div class="fr">
-          <input type="text" id="assetName" placeholder="Name (e.g. Chase Checking)" />
-        </div>
-        <div class="fr">
-          <select id="assetCategory">
-            <option>Cash</option>
-            <option>Investment</option>
-            <option>Retirement</option>
-            <option>Property</option>
-            <option>Vehicle</option>
-            <option>Other</option>
-          </select>
-          <input type="number" id="assetBalance" placeholder="Balance" inputmode="decimal" />
-        </div>
-        <button class="save-btn" id="assetSave">Add asset</button>
+    <section class="ledger assets">
+      <div class="ledger-head">
+        <h2>Assets</h2>
+        <div class="total" id="assetsTotal">0,00 €</div>
       </div>
-    </div>
-    <div class="mini-chart-wrap">
-      <svg class="mini-chart" id="assetsChart" viewBox="0 0 320 90" preserveAspectRatio="none"></svg>
-    </div>
-  </section>
-
-  <section class="ledger liabilities">
-    <div class="ledger-head">
-      <h2>Liabilities</h2>
-      <div class="total" id="liabilitiesTotal">0</div>
-    </div>
-    <div class="rows" id="liabilitiesRows"></div>
-    <div class="add-row">
-      <button class="add-toggle" id="liabilitiesToggle">+ add a liability</button>
-      <div class="add-form" id="liabilitiesForm">
-        <div class="fr">
-          <input type="text" id="liabName" placeholder="Name (e.g. Amex Card)" />
+      <div class="rows" id="assetsRows"></div>
+      <div class="add-row">
+        <button class="add-toggle" id="assetsToggle">+ add an asset</button>
+        <div class="add-form" id="assetsForm">
+          <div class="fr">
+            <input type="text" id="assetName" placeholder="Name (e.g. Chase Checking)" />
+          </div>
+          <div class="fr">
+            <select id="assetCategory">
+              <option>Cash</option>
+              <option>Investment</option>
+              <option>Retirement</option>
+              <option>Property</option>
+              <option>Vehicle</option>
+              <option>Other</option>
+            </select>
+            <input type="number" id="assetBalance" placeholder="Balance" inputmode="decimal" />
+          </div>
+          <button class="save-btn" id="assetSave">Add asset</button>
         </div>
-        <div class="fr">
-          <select id="liabCategory">
-            <option>Credit Card</option>
-            <option>Loan</option>
-            <option>Mortgage</option>
-            <option>Other</option>
-          </select>
-          <input type="number" id="liabBalance" placeholder="Balance" inputmode="decimal" />
+      </div>
+    </section>
+
+    <section class="ledger liabilities">
+      <div class="ledger-head">
+        <h2>Liabilities</h2>
+        <div class="total" id="liabilitiesTotal">0,00 €</div>
+      </div>
+      <div class="rows" id="liabilitiesRows"></div>
+      <div class="add-row">
+        <button class="add-toggle" id="liabilitiesToggle">+ add a liability</button>
+        <div class="add-form" id="liabilitiesForm">
+          <div class="fr">
+            <input type="text" id="liabName" placeholder="Name (e.g. Amex Card)" />
+          </div>
+          <div class="fr">
+            <select id="liabCategory">
+              <option>Credit Card</option>
+              <option>Loan</option>
+              <option>Mortgage</option>
+              <option>Other</option>
+            </select>
+            <input type="number" id="liabBalance" placeholder="Balance" inputmode="decimal" />
+          </div>
+          <button class="save-btn" id="liabSave">Add liability</button>
         </div>
-        <button class="save-btn" id="liabSave">Add liability</button>
       </div>
-    </div>
-    <div class="mini-chart-wrap">
-      <svg class="mini-chart" id="liabilitiesChart" viewBox="0 0 320 90" preserveAspectRatio="none"></svg>
-    </div>
-  </section>
+    </section>
 
-  <section class="account-history">
-    <div class="ledger-head">
-      <h2>Account History</h2>
-    </div>
-    <select id="accountHistorySelect" class="account-select"></select>
-    <div class="mini-chart-wrap">
-      <svg class="mini-chart" id="accountHistoryChart" viewBox="0 0 320 110" preserveAspectRatio="none"></svg>
-    </div>
-  </section>
-
-  <section class="history">
-    <div class="ledger-head">
-      <h2>History</h2>
-      <div class="hist-actions">
-        <button class="export-btn" id="exportBtn">Export CSV</button>
-        <button class="export-btn" id="importBtn">Import CSV</button>
+    <section class="history">
+      <div class="ledger-head">
+        <h2>History</h2>
+        <div class="hist-actions">
+          <button class="export-btn" id="exportBtn">Export CSV</button>
+          <button class="export-btn" id="importBtn">Import CSV</button>
+        </div>
       </div>
-    </div>
-    <input type="file" id="csvFileInput" accept=".csv,text/csv" style="display:none" />
-    <div class="hist-rows" id="histRows"></div>
-  </section>
+      <input type="file" id="csvFileInput" accept=".csv,text/csv" style="display:none" />
+      <div class="hist-rows" id="histRows"></div>
+    </section>
 
-  <section class="snapshot-bar">
-    <div class="txt">
-      <div class="t">Record a balance</div>
-      <div class="s" id="snapshotSub">Saves a point in your history</div>
-      <input type="date" id="snapshotDate" class="date-input" />
-    </div>
-    <button class="snapshot-btn" id="snapshotBtn">Save snapshot</button>
-  </section>
+    <section class="snapshot-bar">
+      <div class="txt">
+        <div class="t">Record a balance</div>
+        <div class="s" id="snapshotSub">Saves a point in your history</div>
+        <input type="date" id="snapshotDate" class="date-input" />
+      </div>
+      <button class="snapshot-btn" id="snapshotBtn">Save snapshot</button>
+    </section>
 
-  <section class="backup-section">
-    <div class="ledger-head">
-      <h2>Backup &amp; Restore</h2>
-    </div>
-    <p class="backup-note">Save a full backup (all accounts and history) so you can restore everything if you switch devices or clear your browser data.</p>
-    <div class="backup-actions">
-      <button class="backup-btn" id="backupBtn">Download backup</button>
-      <button class="backup-btn restore" id="restoreBtn">Restore backup</button>
-    </div>
-    <input type="file" id="jsonFileInput" accept=".json,application/json" style="display:none" />
-  </section>
+    <section class="backup-section">
+      <div class="ledger-head">
+        <h2>Backup &amp; Restore</h2>
+      </div>
+      <p class="backup-note">Save a full backup (all accounts and history) so you can restore everything if you switch devices or clear your browser data.</p>
+      <div class="backup-actions">
+        <button class="backup-btn" id="backupBtn">Download backup</button>
+        <button class="backup-btn restore" id="restoreBtn">Restore backup</button>
+      </div>
+      <input type="file" id="jsonFileInput" accept=".json,application/json" style="display:none" />
+    </section>
 
-  <footer class="note">Stored privately on this device, only visible to you.<br/>Add this page to your Home Screen for one-tap access.</footer>
+    <footer class="note">Stored privately on this device, only visible to you.<br/>Add this page to your Home Screen for one-tap access.</footer>
+
+  </div>
+
+  <div class="tab-panel" id="tabVisualization" style="display:none;">
+
+    <section class="chart-section">
+      <div class="ledger-head">
+        <h2>Net Worth Over Time</h2>
+      </div>
+      <div class="chart-wrap">
+        <svg class="chart" id="chart" viewBox="0 0 320 160" preserveAspectRatio="none"></svg>
+        <div class="chart-labels" id="chartLabels"></div>
+      </div>
+    </section>
+
+    <section class="mini-chart-section">
+      <div class="ledger-head">
+        <h2 class="mini-chart-title assets-title">Assets Over Time</h2>
+      </div>
+      <div class="mini-chart-wrap">
+        <svg class="mini-chart" id="assetsChart" viewBox="0 0 320 90" preserveAspectRatio="none"></svg>
+      </div>
+    </section>
+
+    <section class="mini-chart-section">
+      <div class="ledger-head">
+        <h2 class="mini-chart-title liabilities-title">Liabilities Over Time</h2>
+      </div>
+      <div class="mini-chart-wrap">
+        <svg class="mini-chart" id="liabilitiesChart" viewBox="0 0 320 90" preserveAspectRatio="none"></svg>
+      </div>
+    </section>
+
+    <section class="account-history">
+      <div class="ledger-head">
+        <h2>Account History</h2>
+      </div>
+      <select id="accountHistorySelect" class="account-select"></select>
+      <div class="mini-chart-wrap">
+        <svg class="mini-chart" id="accountHistoryChart" viewBox="0 0 320 110" preserveAspectRatio="none"></svg>
+      </div>
+    </section>
+
+  </div>
 
 </div>
+
+<nav class="bottom-nav">
+  <button class="nav-btn active" id="navNetWorth" data-tab="tabNetWorth">Net Worth</button>
+  <button class="nav-btn" id="navVisualization" data-tab="tabVisualization">Visualization</button>
+</nav>
 
 <div class="modal-overlay" id="accountModalOverlay">
   <div class="modal-panel">
@@ -429,12 +481,17 @@
   </div>
 </div>
 
+
 <script>
 const fmt = (n) => {
   const neg = n < 0;
   const v = Math.abs(Math.round(n));
   const s = v.toString() + '€';
   return neg ? '-' + s : s;
+};
+const fmtEuro = (n) => {
+  const s = Math.abs(n).toLocaleString('de-DE', {minimumFractionDigits:2, maximumFractionDigits:2});
+  return (n < 0 ? '-' : '') + s + ' €';
 };
 const fmtPlain = (n) => {
   const neg = n < 0;
@@ -850,9 +907,9 @@ function escapeHtml(str){
 
 function render(){
   const { assetsTotal, liabTotal, netWorth } = totals();
-  document.getElementById('netWorthFigure').textContent = fmt(netWorth);
-  document.getElementById('assetsTotal').textContent = fmtPlain(assetsTotal);
-  document.getElementById('liabilitiesTotal').textContent = fmtPlain(liabTotal);
+  document.getElementById('netWorthFigure').textContent = fmtEuro(netWorth);
+  document.getElementById('assetsTotal').textContent = fmtEuro(assetsTotal);
+  document.getElementById('liabilitiesTotal').textContent = fmtEuro(liabTotal);
 
   renderRows('asset','assetsRows');
   renderRows('liability','liabilitiesRows');
@@ -1077,6 +1134,16 @@ document.getElementById('modalBalanceInput').addEventListener('change', async (e
     render();
     renderAccountModal();
   }
+});
+
+document.querySelectorAll('.nav-btn').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+    document.querySelectorAll('.tab-panel').forEach(p=>p.style.display = 'none');
+    btn.classList.add('active');
+    document.getElementById(btn.dataset.tab).style.display = 'block';
+    window.scrollTo(0,0);
+  });
 });
 
 loadData();
