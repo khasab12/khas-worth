@@ -144,6 +144,20 @@
   .mini-chart-wrap{margin-top:14px;}
   .mini-chart{width:100%;height:76px;display:block;}
 
+  .account-history{
+    margin:0 0 28px;padding:16px;border:1px solid var(--line-strong);border-radius:var(--radius);
+    background:var(--ink-800);
+  }
+  .account-history .ledger-head{margin-bottom:10px;}
+  .account-history h2{
+    font-family:'Fraunces', serif;font-weight:500;font-size:15.5px;margin:0;
+  }
+  .account-select{
+    width:100%;background:var(--ink-700);border:1px solid var(--line);color:var(--text);
+    font-family:'IBM Plex Sans', sans-serif;font-size:13.5px;padding:9px 10px;border-radius:7px;
+  }
+  .account-history .mini-chart{height:100px;}
+
   /* Snapshot bar */
   .snapshot-bar{
     margin:30px 0 30px;padding:16px;border:1px solid var(--line-strong);border-radius:var(--radius);
@@ -293,6 +307,16 @@
     </div>
     <div class="mini-chart-wrap">
       <svg class="mini-chart" id="liabilitiesChart" viewBox="0 0 320 90" preserveAspectRatio="none"></svg>
+    </div>
+  </section>
+
+  <section class="account-history">
+    <div class="ledger-head">
+      <h2>Account History</h2>
+    </div>
+    <select id="accountHistorySelect" class="account-select"></select>
+    <div class="mini-chart-wrap">
+      <svg class="mini-chart" id="accountHistoryChart" viewBox="0 0 320 110" preserveAspectRatio="none"></svg>
     </div>
   </section>
 
@@ -488,6 +512,82 @@ function renderChart(){
 
 
 
+function populateAccountSelect(){
+  const sel = document.getElementById('accountHistorySelect');
+  const prevValue = sel.value;
+  const assetsOpts = accounts.filter(a=>a.type==='asset');
+  const liabOpts = accounts.filter(a=>a.type==='liability');
+
+  if(accounts.length===0){
+    sel.innerHTML = `<option value="">Add an account to see its history</option>`;
+    sel.disabled = true;
+    return;
+  }
+  sel.disabled = false;
+
+  let html = '';
+  if(assetsOpts.length){
+    html += `<optgroup label="Assets">` + assetsOpts.map(a=>`<option value="${a.id}">${escapeHtml(a.name)}</option>`).join('') + `</optgroup>`;
+  }
+  if(liabOpts.length){
+    html += `<optgroup label="Liabilities">` + liabOpts.map(a=>`<option value="${a.id}">${escapeHtml(a.name)}</option>`).join('') + `</optgroup>`;
+  }
+  sel.innerHTML = html;
+
+  if(prevValue && accounts.some(a=>a.id===prevValue)){
+    sel.value = prevValue;
+  }
+}
+
+function renderAccountHistoryChart(){
+  const sel = document.getElementById('accountHistorySelect');
+  const svg = document.getElementById('accountHistoryChart');
+  const accountId = sel.value;
+  const acc = accounts.find(a=>a.id===accountId);
+
+  if(!acc){
+    svg.innerHTML = `<text x="160" y="55" text-anchor="middle" fill="#8F96A3" font-family="IBM Plex Mono, monospace" font-size="10">No account selected</text>`;
+    return;
+  }
+
+  const sorted = [...snapshots]
+    .filter(s=> Array.isArray(s.accounts) && s.accounts.some(sa=>sa.id===accountId))
+    .sort((a,b)=> new Date(a.date) - new Date(b.date));
+
+  if(sorted.length < 2){
+    svg.innerHTML = `<text x="160" y="55" text-anchor="middle" fill="#8F96A3" font-family="IBM Plex Mono, monospace" font-size="10">Save 2+ snapshots (after adding this account) to see its history</text>`;
+    return;
+  }
+
+  const vals = sorted.map(s=> s.accounts.find(sa=>sa.id===accountId).balance);
+  const color = acc.type==='asset' ? '#C9A15C' : '#B5584A';
+
+  const w = 320, h = 110, padL = 4, padR = 4, padT = 8, padB = 8;
+  const min = Math.min(...vals, 0);
+  const max = Math.max(...vals, 0);
+  const range = (max - min) || 1;
+
+  const xFor = (i)=> padL + (i/(sorted.length-1)) * (w - padL - padR);
+  const yFor = (v)=> h - padB - ((v - min)/range) * (h - padT - padB);
+  const linePts = vals.map((v,i)=> `${xFor(i).toFixed(1)},${yFor(v).toFixed(1)}`).join(' ');
+  const areaPts = `${padL},${yFor(min).toFixed(1)} ` + linePts + ` ${xFor(sorted.length-1).toFixed(1)},${yFor(min).toFixed(1)}`;
+
+  let grid = '';
+  for(let i=0;i<=3;i++){
+    const gy = padT + (i/3) * (h - padT - padB);
+    grid += `<line x1="${padL}" y1="${gy.toFixed(1)}" x2="${w-padR}" y2="${gy.toFixed(1)}" stroke="rgba(237,230,214,0.08)" stroke-width="1"/>`;
+  }
+
+  const dots = vals.map((v,i)=> `<circle cx="${xFor(i).toFixed(1)}" cy="${yFor(v).toFixed(1)}" r="2" fill="${color}"/>`).join('');
+
+  svg.innerHTML = `
+    ${grid}
+    <polygon points="${areaPts}" fill="${color}" fill-opacity="0.12" stroke="none"/>
+    <polyline points="${linePts}" fill="none" stroke="${color}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+    ${dots}
+  `;
+}
+
 function renderMiniChart(svgId, valueKey, color){
   const svg = document.getElementById(svgId);
   const sorted = [...snapshots].sort((a,b)=> new Date(a.date) - new Date(b.date));
@@ -573,6 +673,8 @@ function render(){
   renderChart();
   renderMiniChart('assetsChart', 'assetsTotal', '#C9A15C');
   renderMiniChart('liabilitiesChart', 'liabilitiesTotal', '#B5584A');
+  populateAccountSelect();
+  renderAccountHistoryChart();
   renderHistory();
 
   const btn = document.getElementById('snapshotBtn');
@@ -633,7 +735,8 @@ document.getElementById('snapshotBtn').addEventListener('click', async ()=>{
   const snap = {
     id: existingIdx>-1 ? snapshots[existingIdx].id : 'snap_'+Date.now(),
     date: picked.toISOString(),
-    assetsTotal, liabilitiesTotal: liabTotal, netWorth
+    assetsTotal, liabilitiesTotal: liabTotal, netWorth,
+    accounts: accounts.map(a=>({ id:a.id, name:a.name, type:a.type, category:a.category, balance:a.balance }))
   };
   if(existingIdx>-1){ snapshots[existingIdx] = snap; } else { snapshots.push(snap); }
   await saveSnapshots();
@@ -645,6 +748,8 @@ const todayISO = new Date().toISOString().slice(0,10);
 snapshotDateInput.value = todayISO;
 snapshotDateInput.max = todayISO;
 snapshotDateInput.addEventListener('change', render);
+
+document.getElementById('accountHistorySelect').addEventListener('change', renderAccountHistoryChart);
 
 
 
