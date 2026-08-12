@@ -1723,6 +1723,36 @@ document.querySelectorAll('.nav-btn').forEach(btn=>{
   });
 });
 
+const txDateInput = document.getElementById('txDate');
+txDateInput.value = new Date().toISOString().slice(0,10);
+
+document.getElementById('txSave').addEventListener('click', async ()=>{
+  const name = document.getElementById('txName').value.trim();
+  const date = txDateInput.value;
+  const type = document.getElementById('txTypeSelect').value;
+  const accountId = document.getElementById('txAccountSelect').value;
+  const category = document.getElementById('txCategorySelect').value;
+  const amount = Number(document.getElementById('txAmount').value) || 0;
+
+  if(!name){ alert('Please enter a name for this transaction.'); return; }
+  if(!date){ alert('Please pick a date.'); return; }
+  if(!accountId){ alert('Please add an account first (in the Net Worth tab), then choose it here.'); return; }
+  if(amount <= 0){ alert('Please enter an amount greater than 0.'); return; }
+
+  const acc = accounts.find(a=>a.id===accountId);
+  transactions.push({
+    id: 'tx_'+Date.now()+'_'+Math.random().toString(36).slice(2,7),
+    name, date, type, category,
+    accountId, accountName: acc ? acc.name : '',
+    amount
+  });
+  await saveTransactions();
+
+  document.getElementById('txName').value = '';
+  document.getElementById('txAmount').value = '';
+  renderTransactions();
+});
+
 loadData();
 </script>
 </body>
