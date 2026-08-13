@@ -265,14 +265,15 @@
   .bottom-nav{
     position:fixed;bottom:0;left:0;right:0;
     background:var(--ink-800);border-top:1px solid var(--line-strong);
-    display:flex;justify-content:center;gap:4px;
-    padding:8px 10px calc(8px + env(safe-area-inset-bottom));
+    display:flex;justify-content:center;gap:3px;
+    padding:8px 8px calc(8px + env(safe-area-inset-bottom));
     z-index:90;
+    overflow-x:auto;
   }
   .nav-btn{
-    flex:1;max-width:140px;background:none;border:none;color:var(--text-muted);
-    font-family:'IBM Plex Sans', sans-serif;font-weight:500;font-size:10.5px;
-    padding:9px 3px;border-radius:9px;cursor:pointer;
+    flex:1 1 0;min-width:52px;max-width:130px;background:none;border:none;color:var(--text-muted);
+    font-family:'IBM Plex Sans', sans-serif;font-weight:500;font-size:9.5px;
+    padding:8px 2px;border-radius:9px;cursor:pointer;white-space:nowrap;
   }
   .nav-btn.active{background:var(--paper);color:var(--ink-900);}
 
@@ -332,7 +333,10 @@
     display:flex;justify-content:space-between;align-items:center;
     padding:11px 0;border-bottom:1px solid var(--line);gap:10px;
   }
-  .tx-row .tx-meta{min-width:0;flex:1;}
+  .tx-row .tx-meta{
+    min-width:0;flex:1;background:none;border:none;padding:0;margin:0;text-align:left;cursor:pointer;
+  }
+  .tx-row .tx-meta:hover .tx-name{color:var(--gold);}
   .tx-row .tx-name{font-size:14px;font-weight:500;color:var(--text);}
   .tx-row .tx-sub{
     font-family:'IBM Plex Mono', monospace;font-size:10.5px;color:var(--text-muted);
@@ -344,6 +348,33 @@
   }
   .tx-row .tx-amount.income{color:var(--gold);}
   .tx-row .tx-amount.expense{color:var(--burgundy);}
+
+  /* P&L tab */
+  .pl-group{
+    margin-bottom:22px;padding:14px 16px;border:1px solid var(--line-strong);border-radius:var(--radius);
+    background:var(--ink-800);
+  }
+  .pl-group-head{
+    display:flex;justify-content:space-between;align-items:baseline;
+    padding-bottom:8px;margin-bottom:6px;border-bottom:1px solid var(--line-strong);
+  }
+  .pl-group-title{
+    font-family:'Fraunces', serif;font-weight:500;font-size:14.5px;margin:0;color:var(--text);
+  }
+  .pl-group-total{
+    font-family:'IBM Plex Mono', monospace;font-size:13.5px;font-variant-numeric:tabular-nums;
+  }
+  .pl-group-total.positive{color:var(--gold);}
+  .pl-group-total.negative{color:var(--burgundy);}
+  .pl-row{
+    display:flex;justify-content:space-between;align-items:center;
+    padding:7px 0;font-size:13px;color:var(--text-muted);
+  }
+  .pl-row .pl-row-label{color:var(--text);}
+  .pl-row .pl-row-amount{
+    font-family:'IBM Plex Mono', monospace;font-variant-numeric:tabular-nums;color:var(--text);
+  }
+  .pl-row.zero{opacity:0.45;}
 
   .mini-chart-section{margin-bottom:28px;}
   .mini-chart-section .ledger-head{margin-bottom:2px;}
@@ -400,6 +431,8 @@
   .modal-hist-title{
     font-family:'Fraunces', serif;font-weight:500;font-size:14.5px;margin:20px 0 4px;
   }
+  .tx-modal-form{margin:16px 0 20px;}
+  .tx-modal-delete{width:100%;}
 </style>
 </head>
 <body>
@@ -426,12 +459,11 @@
           </div>
           <div class="fr">
             <select id="assetCategory">
-              <option>Cash</option>
-              <option>Investment</option>
-              <option>Retirement</option>
-              <option>Property</option>
-              <option>Vehicle</option>
-              <option>Other</option>
+              <option>Bargeld</option>
+              <option>Girokonto</option>
+              <option>Gemeinschaftskonto</option>
+              <option>Depot</option>
+              <option>Altersvorsorge</option>
             </select>
             <input type="number" id="assetBalance" placeholder="Balance" inputmode="decimal" />
           </div>
@@ -454,10 +486,11 @@
           </div>
           <div class="fr">
             <select id="liabCategory">
-              <option>Credit Card</option>
-              <option>Loan</option>
-              <option>Mortgage</option>
-              <option>Other</option>
+              <option>Debitkarte</option>
+              <option>Kreditkarte</option>
+              <option>Lombardkredit</option>
+              <option>Kredit</option>
+              <option>Leihe</option>
             </select>
             <input type="number" id="liabBalance" placeholder="Balance" inputmode="decimal" />
           </div>
@@ -621,16 +654,50 @@
         <div class="fr">
           <select id="txAccountSelect"></select>
           <select id="txCategorySelect">
-            <option>Salary</option>
-            <option>Groceries</option>
-            <option>Rent</option>
-            <option>Utilities</option>
-            <option>Transport</option>
-            <option>Entertainment</option>
-            <option>Health</option>
-            <option>Shopping</option>
-            <option>Subscriptions</option>
-            <option>Other</option>
+            <optgroup label="A Einnahmen">
+              <option>Gehalt</option>
+              <option>Partneranteil</option>
+              <option>Cashback</option>
+              <option>Dividenden</option>
+              <option>Zinseinnahmen</option>
+            </optgroup>
+            <optgroup label="B Fixe Kosten">
+              <option>Transport</option>
+              <option>Versicherungen</option>
+              <option>Miete</option>
+              <option>Kredit</option>
+              <option>Abos</option>
+              <option>Internet</option>
+              <option>Strom</option>
+              <option>Mobilfunk</option>
+              <option>AE</option>
+              <option>Kita</option>
+              <option>Rundfunk</option>
+            </optgroup>
+            <optgroup label="C Notwendige Kosten">
+              <option>Externverpflegung</option>
+              <option>Drogerie</option>
+              <option>Lebensmittel</option>
+            </optgroup>
+            <optgroup label="D Variable Kosten">
+              <option>Freizeit</option>
+              <option>Gesundheit</option>
+              <option>Shopping</option>
+              <option>Restaurant</option>
+              <option>Zinsausgaben</option>
+              <option>Sonstiges</option>
+            </optgroup>
+            <optgroup label="E Urlaub">
+              <option>Urlaub</option>
+            </optgroup>
+            <optgroup label="F Investitionen">
+              <option>ETF</option>
+              <option>Optionsscheine</option>
+              <option>Aktien</option>
+            </optgroup>
+            <optgroup label="G Umbuchung">
+              <option>Umbuchung</option>
+            </optgroup>
           </select>
         </div>
         <div class="fr">
@@ -651,6 +718,20 @@
       <input type="file" id="txCsvFileInput" accept=".csv,text/csv" style="display:none" />
       <div class="hist-rows" id="txRows"></div>
     </section>
+
+  </div>
+
+  <div class="tab-panel" id="tabPL" style="display:none;">
+
+    <section class="hero">
+      <div class="label-row">
+        <div class="label">P&amp;L</div>
+        <input type="month" id="plMonthSelect" class="year-select" />
+      </div>
+      <div class="figure" id="plResultFigure">0,00 €</div>
+    </section>
+
+    <div id="plReport"></div>
 
   </div>
 
@@ -703,6 +784,7 @@
   <button class="nav-btn" id="navVisualization" data-tab="tabVisualization">Visualization</button>
   <button class="nav-btn" id="navInvestment" data-tab="tabInvestment">Investment</button>
   <button class="nav-btn" id="navTransactions" data-tab="tabTransactions">Transactions</button>
+  <button class="nav-btn" id="navPL" data-tab="tabPL">P&amp;L</button>
   <button class="nav-btn" id="navDividends" data-tab="tabDividends">Dividends</button>
 </nav>
 
@@ -725,6 +807,77 @@
 
     <h3 class="modal-hist-title">Snapshot History</h3>
     <div class="hist-rows" id="modalHistRows"></div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="txModalOverlay">
+  <div class="modal-panel">
+    <div class="modal-header">
+      <input type="text" id="txModalName" class="modal-name-input" aria-label="Transaction name" />
+      <button class="modal-close" id="txModalCloseBtn" aria-label="Close">×</button>
+    </div>
+    <div class="tx-form tx-modal-form">
+      <div class="fr">
+        <input type="date" id="txModalDate" class="date-input" />
+        <select id="txModalType">
+          <option value="expense">Expense</option>
+          <option value="income">Income</option>
+        </select>
+      </div>
+      <div class="fr">
+        <select id="txModalAccount"></select>
+        <select id="txModalCategory">
+          <optgroup label="A Einnahmen">
+            <option>Gehalt</option>
+            <option>Partneranteil</option>
+            <option>Cashback</option>
+            <option>Dividenden</option>
+            <option>Zinseinnahmen</option>
+          </optgroup>
+          <optgroup label="B Fixe Kosten">
+            <option>Transport</option>
+            <option>Versicherungen</option>
+            <option>Miete</option>
+            <option>Kredit</option>
+            <option>Abos</option>
+            <option>Internet</option>
+            <option>Strom</option>
+            <option>Mobilfunk</option>
+            <option>AE</option>
+            <option>Kita</option>
+            <option>Rundfunk</option>
+          </optgroup>
+          <optgroup label="C Notwendige Kosten">
+            <option>Externverpflegung</option>
+            <option>Drogerie</option>
+            <option>Lebensmittel</option>
+          </optgroup>
+          <optgroup label="D Variable Kosten">
+            <option>Freizeit</option>
+            <option>Gesundheit</option>
+            <option>Shopping</option>
+            <option>Restaurant</option>
+            <option>Zinsausgaben</option>
+            <option>Sonstiges</option>
+          </optgroup>
+          <optgroup label="E Urlaub">
+            <option>Urlaub</option>
+          </optgroup>
+          <optgroup label="F Investitionen">
+            <option>ETF</option>
+            <option>Optionsscheine</option>
+            <option>Aktien</option>
+          </optgroup>
+          <optgroup label="G Umbuchung">
+            <option>Umbuchung</option>
+          </optgroup>
+        </select>
+      </div>
+      <div class="fr">
+        <input type="number" id="txModalAmount" inputmode="decimal" />
+      </div>
+    </div>
+    <button class="backup-btn restore tx-modal-delete" id="txModalDeleteBtn">Delete transaction</button>
   </div>
 </div>
 
@@ -795,13 +948,13 @@ function totals(){
 }
 
 function renderInvestmentTab(){
-  const investmentAccounts = accounts.filter(a=> a.type==='asset' && a.category==='Investment');
+  const investmentAccounts = accounts.filter(a=> a.type==='asset' && a.category==='Depot');
   const total = investmentAccounts.reduce((s,a)=> s + Number(a.balance||0), 0);
   document.getElementById('investmentTotalFigure').textContent = fmtEuro(total);
 
   const container = document.getElementById('investmentRows');
   if(investmentAccounts.length===0){
-    container.innerHTML = `<div class="empty">No accounts labeled "Investment" yet. Add or re-categorize an asset as Investment in the Net Worth tab.</div>`;
+    container.innerHTML = `<div class="empty">No accounts labeled "Depot" yet. Add or re-categorize an asset as Depot in the Net Worth tab.</div>`;
     return;
   }
   container.innerHTML = '';
@@ -857,8 +1010,8 @@ function renderTransactions(){
   const selectedYear = yearSel.value;
   const filteredTx = selectedYear==='all' ? transactions : transactions.filter(t=> new Date(t.date + 'T12:00:00').getFullYear() === Number(selectedYear));
 
-  const income = filteredTx.filter(t=>t.type==='income').reduce((s,t)=>s+Number(t.amount||0),0);
-  const expense = filteredTx.filter(t=>t.type==='expense').reduce((s,t)=>s+Number(t.amount||0),0);
+  const income = filteredTx.filter(t=>t.type==='income' && t.category!=='Umbuchung').reduce((s,t)=>s+Number(t.amount||0),0);
+  const expense = filteredTx.filter(t=>t.type==='expense' && t.category!=='Umbuchung').reduce((s,t)=>s+Number(t.amount||0),0);
   document.getElementById('txIncomeTotal').textContent = fmtEuro(income);
   document.getElementById('txExpenseTotal').textContent = fmtEuro(expense);
   document.getElementById('txNetTotal').textContent = fmtEuro(income - expense);
@@ -882,14 +1035,17 @@ function renderTransactions(){
     const row = document.createElement('div');
     row.className = 'tx-row';
     row.innerHTML = `
-      <div class="tx-meta">
+      <button class="tx-meta" data-id="${t.id}">
         <div class="tx-name">${escapeHtml(t.name)}</div>
         <div class="tx-sub">${dstr} · ${escapeHtml(accLabel)} · ${escapeHtml(t.category)}</div>
-      </div>
+      </button>
       <span class="tx-amount ${t.type}">${t.type==='income'?'+':'-'}${fmtPlain(t.amount)}</span>
       <button class="del" data-id="${t.id}" title="Delete transaction" aria-label="Delete transaction">×</button>
     `;
     container.appendChild(row);
+  });
+  container.querySelectorAll('.tx-meta').forEach(btn=>{
+    btn.addEventListener('click', (e)=> openTxModal(e.currentTarget.dataset.id));
   });
   container.querySelectorAll('.del').forEach(btn=>{
     btn.addEventListener('click', async (e)=>{
@@ -902,6 +1058,65 @@ function renderTransactions(){
       renderTransactions();
     });
   });
+}
+
+const CATEGORY_GROUPS = {
+  'Gehalt':'A Einnahmen','Partneranteil':'A Einnahmen','Cashback':'A Einnahmen','Dividenden':'A Einnahmen','Zinseinnahmen':'A Einnahmen',
+  'Transport':'B Fixe Kosten','Versicherungen':'B Fixe Kosten','Miete':'B Fixe Kosten','Kredit':'B Fixe Kosten','Abos':'B Fixe Kosten','Internet':'B Fixe Kosten','Strom':'B Fixe Kosten','Mobilfunk':'B Fixe Kosten','AE':'B Fixe Kosten','Kita':'B Fixe Kosten','Rundfunk':'B Fixe Kosten',
+  'Externverpflegung':'C Notwendige Kosten','Drogerie':'C Notwendige Kosten','Lebensmittel':'C Notwendige Kosten',
+  'Freizeit':'D Variable Kosten','Gesundheit':'D Variable Kosten','Shopping':'D Variable Kosten','Restaurant':'D Variable Kosten','Zinsausgaben':'D Variable Kosten','Sonstiges':'D Variable Kosten',
+  'Urlaub':'E Urlaub',
+  'ETF':'F Investitionen','Optionsscheine':'F Investitionen','Aktien':'F Investitionen'
+};
+const PL_GROUP_ORDER = ['A Einnahmen','B Fixe Kosten','C Notwendige Kosten','D Variable Kosten','E Urlaub','F Investitionen'];
+
+function renderPL(){
+  const monthInput = document.getElementById('plMonthSelect');
+  if(!monthInput.value){
+    const now = new Date();
+    monthInput.value = now.toISOString().slice(0,7);
+  }
+  const selectedMonth = monthInput.value; // 'YYYY-MM'
+
+  const monthTx = transactions.filter(t=> t.date.slice(0,7) === selectedMonth && t.category !== 'Umbuchung');
+
+  let grandTotal = 0;
+  const container = document.getElementById('plReport');
+  container.innerHTML = '';
+
+  PL_GROUP_ORDER.forEach(groupName=>{
+    const categoriesInGroup = Object.keys(CATEGORY_GROUPS).filter(c=> CATEGORY_GROUPS[c] === groupName);
+    let groupTotal = 0;
+    const rowsHtml = categoriesInGroup.map(cat=>{
+      const catTx = monthTx.filter(t=>t.category===cat);
+      const sum = catTx.reduce((s,t)=> s + (t.type==='income' ? t.amount : -t.amount), 0);
+      groupTotal += sum;
+      return { cat, sum };
+    }).map(({cat,sum})=>{
+      const isZero = Math.abs(sum) < 0.005;
+      return `<div class="pl-row ${isZero?'zero':''}">
+        <span class="pl-row-label">${escapeHtml(cat)}</span>
+        <span class="pl-row-amount">${fmtEuro(sum)}</span>
+      </div>`;
+    }).join('');
+
+    grandTotal += groupTotal;
+
+    const groupEl = document.createElement('div');
+    groupEl.className = 'pl-group';
+    groupEl.innerHTML = `
+      <div class="pl-group-head">
+        <h3 class="pl-group-title">${groupName}</h3>
+        <div class="pl-group-total ${groupTotal>0?'positive':(groupTotal<0?'negative':'')}">${fmtEuro(groupTotal)}</div>
+      </div>
+      ${rowsHtml}
+    `;
+    container.appendChild(groupEl);
+  });
+
+  const resultEl = document.getElementById('plResultFigure');
+  resultEl.textContent = fmtEuro(grandTotal);
+  resultEl.style.color = grandTotal > 0 ? 'var(--gold)' : (grandTotal < 0 ? 'var(--burgundy)' : '');
 }
 
 function renderDividends(){
@@ -1106,6 +1321,55 @@ function populateAccountSelect(){
 }
 
 let currentModalAccountId = null;
+
+let currentTxModalId = null;
+
+function openTxModal(txId){
+  currentTxModalId = txId;
+  renderTxModal();
+  document.getElementById('txModalOverlay').classList.add('open');
+}
+
+function closeTxModal(){
+  document.getElementById('txModalOverlay').classList.remove('open');
+  currentTxModalId = null;
+}
+
+function populateTxModalAccountSelect(selectedAccountId){
+  const sel = document.getElementById('txModalAccount');
+  const assetsOpts = accounts.filter(a=>a.type==='asset');
+  const liabOpts = accounts.filter(a=>a.type==='liability');
+  let html = '';
+  if(assetsOpts.length){
+    html += `<optgroup label="Assets">` + assetsOpts.map(a=>`<option value="${a.id}">${escapeHtml(a.name)}</option>`).join('') + `</optgroup>`;
+  }
+  if(liabOpts.length){
+    html += `<optgroup label="Liabilities">` + liabOpts.map(a=>`<option value="${a.id}">${escapeHtml(a.name)}</option>`).join('') + `</optgroup>`;
+  }
+  sel.innerHTML = html || `<option value="">No accounts</option>`;
+  if(selectedAccountId && accounts.some(a=>a.id===selectedAccountId)){
+    sel.value = selectedAccountId;
+  }
+}
+
+function renderTxModal(){
+  const t = transactions.find(x=>x.id===currentTxModalId);
+  if(!t){ closeTxModal(); return; }
+
+  document.getElementById('txModalName').value = t.name;
+  document.getElementById('txModalDate').value = t.date;
+  document.getElementById('txModalType').value = t.type;
+  document.getElementById('txModalAmount').value = t.amount;
+  populateTxModalAccountSelect(t.accountId);
+
+  const catSel = document.getElementById('txModalCategory');
+  if(![...catSel.options].some(o=>o.value===t.category)){
+    const opt = document.createElement('option');
+    opt.value = t.category; opt.textContent = t.category;
+    catSel.appendChild(opt);
+  }
+  catSel.value = t.category;
+}
 
 function openAccountModal(accountId){
   currentModalAccountId = accountId;
@@ -1363,6 +1627,7 @@ function render(){
   renderInvestmentTab();
   populateTxAccountSelect();
   renderTransactions();
+  renderPL();
   renderDividends();
 
   const btn = document.getElementById('snapshotBtn');
@@ -1874,6 +2139,8 @@ txDateInput.value = new Date().toISOString().slice(0,10);
 
 document.getElementById('txYearSelect').addEventListener('change', renderTransactions);
 
+document.getElementById('plMonthSelect').addEventListener('change', renderPL);
+
 document.getElementById('txSave').addEventListener('click', async ()=>{
   const name = document.getElementById('txName').value.trim();
   const date = txDateInput.value;
@@ -2088,6 +2355,82 @@ document.getElementById('divCsvFileInput').addEventListener('change', (e)=>{
     e.target.value = '';
   };
   reader.readAsText(file);
+});
+
+document.getElementById('txModalCloseBtn').addEventListener('click', closeTxModal);
+document.getElementById('txModalOverlay').addEventListener('click', (e)=>{
+  if(e.target.id === 'txModalOverlay') closeTxModal();
+});
+
+document.getElementById('txModalName').addEventListener('change', async (e)=>{
+  const t = transactions.find(x=>x.id===currentTxModalId);
+  const newName = e.target.value.trim();
+  if(t && newName){
+    t.name = newName;
+    await saveTransactions();
+    renderTransactions();
+  } else if(t){
+    e.target.value = t.name;
+  }
+});
+
+document.getElementById('txModalDate').addEventListener('change', async (e)=>{
+  const t = transactions.find(x=>x.id===currentTxModalId);
+  if(t && e.target.value){
+    t.date = e.target.value;
+    await saveTransactions();
+    renderTransactions();
+  }
+});
+
+document.getElementById('txModalType').addEventListener('change', async (e)=>{
+  const t = transactions.find(x=>x.id===currentTxModalId);
+  if(t){
+    t.type = e.target.value;
+    await saveTransactions();
+    renderTransactions();
+  }
+});
+
+document.getElementById('txModalAccount').addEventListener('change', async (e)=>{
+  const t = transactions.find(x=>x.id===currentTxModalId);
+  if(t){
+    const acc = accounts.find(a=>a.id===e.target.value);
+    t.accountId = e.target.value;
+    t.accountName = acc ? acc.name : '';
+    await saveTransactions();
+    renderTransactions();
+  }
+});
+
+document.getElementById('txModalCategory').addEventListener('change', async (e)=>{
+  const t = transactions.find(x=>x.id===currentTxModalId);
+  if(t){
+    t.category = e.target.value;
+    await saveTransactions();
+    renderTransactions();
+  }
+});
+
+document.getElementById('txModalAmount').addEventListener('change', async (e)=>{
+  const t = transactions.find(x=>x.id===currentTxModalId);
+  if(t){
+    const val = Number(e.target.value) || 0;
+    if(val <= 0){ e.target.value = t.amount; return; }
+    t.amount = val;
+    await saveTransactions();
+    renderTransactions();
+  }
+});
+
+document.getElementById('txModalDeleteBtn').addEventListener('click', async ()=>{
+  const t = transactions.find(x=>x.id===currentTxModalId);
+  if(!t) return;
+  if(!confirm(`Delete "${t.name}"? This can't be undone.`)) return;
+  transactions = transactions.filter(x=>x.id!==currentTxModalId);
+  await saveTransactions();
+  closeTxModal();
+  renderTransactions();
 });
 
 loadData();
