@@ -44,6 +44,15 @@
     font-family:'IBM Plex Mono', monospace;font-size:11px;letter-spacing:0.12em;
     text-transform:uppercase;color:var(--text-muted);margin-bottom:8px;
   }
+  .hero .label-row{
+    display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;
+  }
+  .hero .label-row .label{margin-bottom:0;}
+  .year-select{
+    background:var(--ink-700);border:1px solid var(--line);color:var(--text);
+    font-family:'IBM Plex Mono', monospace;font-size:11px;padding:5px 8px;border-radius:7px;
+    cursor:pointer;
+  }
   .hero .figure{
     font-family:'Fraunces', serif;font-weight:500;font-size:44px;line-height:1;
     font-variant-numeric:tabular-nums;
@@ -272,6 +281,13 @@
   .ledger.investments{margin-bottom:28px;}
 
   /* Transactions tab */
+  .tx-summary-head{
+    display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;
+  }
+  .tx-summary-head-label{
+    font-family:'IBM Plex Mono', monospace;font-size:11px;letter-spacing:0.12em;
+    text-transform:uppercase;color:var(--text-muted);
+  }
   .tx-summary{
     display:flex;gap:10px;margin-bottom:26px;
   }
@@ -566,6 +582,12 @@
 
   <div class="tab-panel" id="tabTransactions" style="display:none;">
 
+    <div class="tx-summary-head">
+      <span class="tx-summary-head-label">Summary</span>
+      <select id="txYearSelect" class="year-select">
+        <option value="all">Total</option>
+      </select>
+    </div>
     <section class="tx-summary">
       <div class="tx-summary-item">
         <div class="tx-summary-label">Income</div>
@@ -635,7 +657,12 @@
   <div class="tab-panel" id="tabDividends" style="display:none;">
 
     <section class="hero">
-      <div class="label">Total Dividends</div>
+      <div class="label-row">
+        <div class="label">Total Dividends</div>
+        <select id="dividendYearSelect" class="year-select">
+          <option value="all">Total</option>
+        </select>
+      </div>
       <div class="figure" id="dividendTotalFigure">0,00 €</div>
     </section>
 
@@ -820,8 +847,18 @@ function populateTxAccountSelect(){
 }
 
 function renderTransactions(){
-  const income = transactions.filter(t=>t.type==='income').reduce((s,t)=>s+Number(t.amount||0),0);
-  const expense = transactions.filter(t=>t.type==='expense').reduce((s,t)=>s+Number(t.amount||0),0);
+  const yearSel = document.getElementById('txYearSelect');
+  const prevValue = yearSel.value || 'all';
+
+  const years = [...new Set(transactions.map(t=> new Date(t.date + 'T12:00:00').getFullYear()))].sort((a,b)=> b-a);
+  yearSel.innerHTML = `<option value="all">Total</option>` + years.map(y=>`<option value="${y}">${y}</option>`).join('');
+  yearSel.value = (prevValue==='all' || years.some(y=>String(y)===prevValue)) ? prevValue : 'all';
+
+  const selectedYear = yearSel.value;
+  const filteredTx = selectedYear==='all' ? transactions : transactions.filter(t=> new Date(t.date + 'T12:00:00').getFullYear() === Number(selectedYear));
+
+  const income = filteredTx.filter(t=>t.type==='income').reduce((s,t)=>s+Number(t.amount||0),0);
+  const expense = filteredTx.filter(t=>t.type==='expense').reduce((s,t)=>s+Number(t.amount||0),0);
   document.getElementById('txIncomeTotal').textContent = fmtEuro(income);
   document.getElementById('txExpenseTotal').textContent = fmtEuro(expense);
   document.getElementById('txNetTotal').textContent = fmtEuro(income - expense);
@@ -864,7 +901,17 @@ function renderTransactions(){
 }
 
 function renderDividends(){
-  const total = dividends.reduce((s,d)=>s+Number(d.amount||0),0);
+  const yearSel = document.getElementById('dividendYearSelect');
+  const prevValue = yearSel.value || 'all';
+
+  const years = [...new Set(dividends.map(d=> new Date(d.date + 'T12:00:00').getFullYear()))].sort((a,b)=> b-a);
+  yearSel.innerHTML = `<option value="all">Total</option>` + years.map(y=>`<option value="${y}">${y}</option>`).join('');
+  yearSel.value = (prevValue==='all' || years.some(y=>String(y)===prevValue)) ? prevValue : 'all';
+
+  const selectedYear = yearSel.value;
+  const filtered = selectedYear==='all' ? dividends : dividends.filter(d=> new Date(d.date + 'T12:00:00').getFullYear() === Number(selectedYear));
+
+  const total = filtered.reduce((s,d)=>s+Number(d.amount||0),0);
   document.getElementById('dividendTotalFigure').textContent = fmtEuro(total);
 
   const container = document.getElementById('divRows');
@@ -1817,6 +1864,8 @@ document.querySelectorAll('.nav-btn').forEach(btn=>{
 const txDateInput = document.getElementById('txDate');
 txDateInput.value = new Date().toISOString().slice(0,10);
 
+document.getElementById('txYearSelect').addEventListener('change', renderTransactions);
+
 document.getElementById('txSave').addEventListener('click', async ()=>{
   const name = document.getElementById('txName').value.trim();
   const date = txDateInput.value;
@@ -1937,6 +1986,8 @@ document.getElementById('txCsvFileInput').addEventListener('change', (e)=>{
 
 const divDateInput = document.getElementById('divDate');
 divDateInput.value = new Date().toISOString().slice(0,10);
+
+document.getElementById('dividendYearSelect').addEventListener('change', renderDividends);
 
 document.getElementById('divSave').addEventListener('click', async ()=>{
   const company = document.getElementById('divCompany').value.trim();
