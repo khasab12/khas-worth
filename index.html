@@ -261,9 +261,9 @@
     z-index:90;
   }
   .nav-btn{
-    flex:1;max-width:160px;background:none;border:none;color:var(--text-muted);
-    font-family:'IBM Plex Sans', sans-serif;font-weight:500;font-size:11.5px;
-    padding:9px 4px;border-radius:9px;cursor:pointer;
+    flex:1;max-width:140px;background:none;border:none;color:var(--text-muted);
+    font-family:'IBM Plex Sans', sans-serif;font-weight:500;font-size:10.5px;
+    padding:9px 3px;border-radius:9px;cursor:pointer;
   }
   .nav-btn.active{background:var(--paper);color:var(--ink-900);}
 
@@ -632,6 +632,43 @@
 
   </div>
 
+  <div class="tab-panel" id="tabDividends" style="display:none;">
+
+    <section class="hero">
+      <div class="label">Total Dividends</div>
+      <div class="figure" id="dividendTotalFigure">0,00 €</div>
+    </section>
+
+    <section class="tx-add">
+      <div class="ledger-head">
+        <h2>Add Dividend</h2>
+      </div>
+      <div class="tx-form">
+        <div class="fr">
+          <input type="text" id="divCompany" placeholder="Company name (e.g. Apple)" />
+        </div>
+        <div class="fr">
+          <input type="date" id="divDate" class="date-input" />
+          <input type="number" id="divAmount" placeholder="Amount" inputmode="decimal" />
+        </div>
+        <button class="save-btn tx-save-btn" id="divSave">Add dividend</button>
+      </div>
+    </section>
+
+    <section class="tx-list">
+      <div class="ledger-head">
+        <h2>Dividends</h2>
+        <div class="hist-actions">
+          <button class="export-btn" id="divExportBtn">Export CSV</button>
+          <button class="export-btn" id="divImportBtn">Import CSV</button>
+        </div>
+      </div>
+      <input type="file" id="divCsvFileInput" accept=".csv,text/csv" style="display:none" />
+      <div class="hist-rows" id="divRows"></div>
+    </section>
+
+  </div>
+
 </div>
 
 <nav class="bottom-nav">
@@ -639,6 +676,7 @@
   <button class="nav-btn" id="navVisualization" data-tab="tabVisualization">Visualization</button>
   <button class="nav-btn" id="navInvestment" data-tab="tabInvestment">Investment</button>
   <button class="nav-btn" id="navTransactions" data-tab="tabTransactions">Transactions</button>
+  <button class="nav-btn" id="navDividends" data-tab="tabDividends">Dividends</button>
 </nav>
 
 <div class="modal-overlay" id="accountModalOverlay">
@@ -686,6 +724,7 @@ const fmtAxis = (n) => Math.round(n).toString();
 let accounts = [];
 let snapshots = [];
 let transactions = [];
+let dividends = [];
 
 async function loadData(){
   try{
@@ -700,6 +739,10 @@ async function loadData(){
     const t = localStorage.getItem('ledger_transactions');
     transactions = t ? JSON.parse(t) : [];
   }catch(e){ transactions = []; }
+  try{
+    const dv = localStorage.getItem('ledger_dividends');
+    dividends = dv ? JSON.parse(dv) : [];
+  }catch(e){ dividends = []; }
   render();
 }
 
@@ -714,6 +757,10 @@ async function saveSnapshots(){
 async function saveTransactions(){
   try{ localStorage.setItem('ledger_transactions', JSON.stringify(transactions)); }
   catch(e){ console.error('save transactions failed', e); }
+}
+async function saveDividends(){
+  try{ localStorage.setItem('ledger_dividends', JSON.stringify(dividends)); }
+  catch(e){ console.error('save dividends failed', e); }
 }
 
 function totals(){
@@ -814,6 +861,45 @@ function renderTransactions(){
       transactions = transactions.filter(x=>x.id!==id);
       await saveTransactions();
       renderTransactions();
+    });
+  });
+}
+
+function renderDividends(){
+  const total = dividends.reduce((s,d)=>s+Number(d.amount||0),0);
+  document.getElementById('dividendTotalFigure').textContent = fmtEuro(total);
+
+  const container = document.getElementById('divRows');
+  if(dividends.length===0){
+    container.innerHTML = `<div class="empty">No dividends recorded yet — add your first above.</div>`;
+    return;
+  }
+  const sorted = [...dividends].sort((a,b)=> new Date(b.date) - new Date(a.date));
+  container.innerHTML = '';
+  sorted.forEach(dv=>{
+    const d = new Date(dv.date + 'T12:00:00');
+    const dstr = d.toLocaleDateString('de-DE', {month:'short', day:'numeric', year:'numeric'});
+    const row = document.createElement('div');
+    row.className = 'tx-row';
+    row.innerHTML = `
+      <div class="tx-meta">
+        <div class="tx-name">${escapeHtml(dv.company)}</div>
+        <div class="tx-sub">${dstr}</div>
+      </div>
+      <span class="tx-amount income">+${fmtPlain(dv.amount)}</span>
+      <button class="del" data-id="${dv.id}" title="Delete dividend" aria-label="Delete dividend">×</button>
+    `;
+    container.appendChild(row);
+  });
+  container.querySelectorAll('.del').forEach(btn=>{
+    btn.addEventListener('click', async (e)=>{
+      const id = e.target.dataset.id;
+      const dv = dividends.find(x=>x.id===id);
+      const label = dv ? dv.company : 'this dividend';
+      if(!confirm(`Delete "${label}"? This can't be undone.`)) return;
+      dividends = dividends.filter(x=>x.id!==id);
+      await saveDividends();
+      renderDividends();
     });
   });
 }
@@ -1224,6 +1310,7 @@ function render(){
   renderInvestmentTab();
   populateTxAccountSelect();
   renderTransactions();
+  renderDividends();
 
   const btn = document.getElementById('snapshotBtn');
   const sub = document.getElementById('snapshotSub');
@@ -1844,6 +1931,102 @@ document.getElementById('txCsvFileInput').addEventListener('change', (e)=>{
     }catch(err){
       console.error(err);
       alert('Could not read that CSV file. Expected columns: Date, Name, Type, Account, Category, Amount.');
+    }
+    e.target.value = '';
+  };
+  reader.readAsText(file);
+});
+
+const divDateInput = document.getElementById('divDate');
+divDateInput.value = new Date().toISOString().slice(0,10);
+
+document.getElementById('divSave').addEventListener('click', async ()=>{
+  const company = document.getElementById('divCompany').value.trim();
+  const date = divDateInput.value;
+  const amount = Number(document.getElementById('divAmount').value) || 0;
+
+  if(!company){ alert('Please enter a company name.'); return; }
+  if(!date){ alert('Please pick a date.'); return; }
+  if(amount <= 0){ alert('Please enter an amount greater than 0.'); return; }
+
+  dividends.push({
+    id: 'div_'+Date.now()+'_'+Math.random().toString(36).slice(2,7),
+    company, date, amount
+  });
+  await saveDividends();
+
+  document.getElementById('divCompany').value = '';
+  document.getElementById('divAmount').value = '';
+  renderDividends();
+});
+
+document.getElementById('divExportBtn').addEventListener('click', ()=>{
+  if(dividends.length===0){ alert('No dividends yet to export.'); return; }
+  const sorted = [...dividends].sort((a,b)=> new Date(a.date) - new Date(b.date));
+  const header = ['Date','Company','Amount'];
+  const rows = sorted.map(d=> [d.date, d.company, Math.round(d.amount)].map(csvField).join(','));
+  const csv = [header.map(csvField).join(','), ...rows].join('\n');
+  const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'dividends.csv';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+});
+
+document.getElementById('divImportBtn').addEventListener('click', ()=>{
+  document.getElementById('divCsvFileInput').click();
+});
+document.getElementById('divCsvFileInput').addEventListener('change', (e)=>{
+  const file = e.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = async (evt)=>{
+    try{
+      const text = evt.target.result;
+      const lines = text.split(/\r?\n/).map(l=>l.trim()).filter(l=>l.length>0);
+      if(lines.length < 2){ alert('CSV has no data rows.'); return; }
+
+      const headerCells = parseCsvLine(lines[0]);
+      const norm = (s)=> s.toLowerCase().replace(/[^a-z]/g,'');
+      const headerLooksValid = headerCells.some(h=> norm(h)==='date') && headerCells.some(h=> norm(h)==='amount');
+      const dataLines = headerLooksValid ? lines.slice(1) : lines;
+
+      let dateIdx=0, companyIdx=1, amountIdx=2;
+      if(headerLooksValid){
+        headerCells.forEach((h,i)=>{
+          const n = norm(h);
+          if(n==='date') dateIdx=i;
+          else if(n==='company') companyIdx=i;
+          else if(n==='amount') amountIdx=i;
+        });
+      }
+
+      let imported = 0, skipped = 0;
+      dataLines.forEach(line=>{
+        const parts = parseCsvLine(line);
+        if(parts.length <= Math.max(dateIdx,companyIdx,amountIdx)){ skipped++; return; }
+        const d = new Date(parts[dateIdx] + 'T12:00:00');
+        if(isNaN(d.getTime())){ skipped++; return; }
+        const company = parts[companyIdx] || 'Unknown';
+        const amount = Math.abs(Number(parts[amountIdx]) || 0);
+        if(amount <= 0){ skipped++; return; }
+        dividends.push({
+          id: 'div_import_'+Date.now()+'_'+imported+'_'+Math.random().toString(36).slice(2,6),
+          company, date: d.toISOString().slice(0,10), amount
+        });
+        imported++;
+      });
+
+      await saveDividends();
+      renderDividends();
+      alert(`Imported ${imported} dividend${imported===1?'':'s'}.` + (skipped>0 ? ` Skipped ${skipped} invalid row${skipped===1?'':'s'}.` : ''));
+    }catch(err){
+      console.error(err);
+      alert('Could not read that CSV file. Expected columns: Date, Company, Amount.');
     }
     e.target.value = '';
   };
