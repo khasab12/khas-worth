@@ -868,7 +868,11 @@ function renderTransactions(){
     container.innerHTML = `<div class="empty">No transactions yet — add your first above.</div>`;
     return;
   }
-  const sorted = [...transactions].sort((a,b)=> new Date(b.date) - new Date(a.date));
+  if(filteredTx.length===0){
+    container.innerHTML = `<div class="empty">No transactions in ${selectedYear}.</div>`;
+    return;
+  }
+  const sorted = [...filteredTx].sort((a,b)=> new Date(b.date) - new Date(a.date));
   container.innerHTML = '';
   sorted.forEach(t=>{
     const acc = accounts.find(a=>a.id===t.accountId);
@@ -919,7 +923,11 @@ function renderDividends(){
     container.innerHTML = `<div class="empty">No dividends recorded yet — add your first above.</div>`;
     return;
   }
-  const sorted = [...dividends].sort((a,b)=> new Date(b.date) - new Date(a.date));
+  if(filtered.length===0){
+    container.innerHTML = `<div class="empty">No dividends in ${selectedYear}.</div>`;
+    return;
+  }
+  const sorted = [...filtered].sort((a,b)=> new Date(b.date) - new Date(a.date));
   container.innerHTML = '';
   sorted.forEach(dv=>{
     const d = new Date(dv.date + 'T12:00:00');
