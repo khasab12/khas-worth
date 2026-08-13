@@ -1056,6 +1056,7 @@ function renderTransactions(){
       transactions = transactions.filter(x=>x.id!==id);
       await saveTransactions();
       renderTransactions();
+      renderPL();
     });
   });
 }
@@ -2166,6 +2167,7 @@ document.getElementById('txSave').addEventListener('click', async ()=>{
   document.getElementById('txName').value = '';
   document.getElementById('txAmount').value = '';
   renderTransactions();
+  renderPL();
 });
 
 document.getElementById('txExportBtn').addEventListener('click', ()=>{
@@ -2249,6 +2251,7 @@ document.getElementById('txCsvFileInput').addEventListener('change', (e)=>{
 
       await saveTransactions();
       renderTransactions();
+      renderPL();
       alert(`Imported ${imported} transaction${imported===1?'':'s'}.` + (skipped>0 ? ` Skipped ${skipped} invalid row${skipped===1?'':'s'}.` : ''));
     }catch(err){
       console.error(err);
@@ -2369,6 +2372,7 @@ document.getElementById('txModalName').addEventListener('change', async (e)=>{
     t.name = newName;
     await saveTransactions();
     renderTransactions();
+    renderPL();
   } else if(t){
     e.target.value = t.name;
   }
@@ -2380,6 +2384,7 @@ document.getElementById('txModalDate').addEventListener('change', async (e)=>{
     t.date = e.target.value;
     await saveTransactions();
     renderTransactions();
+    renderPL();
   }
 });
 
@@ -2389,6 +2394,7 @@ document.getElementById('txModalType').addEventListener('change', async (e)=>{
     t.type = e.target.value;
     await saveTransactions();
     renderTransactions();
+    renderPL();
   }
 });
 
@@ -2400,6 +2406,7 @@ document.getElementById('txModalAccount').addEventListener('change', async (e)=>
     t.accountName = acc ? acc.name : '';
     await saveTransactions();
     renderTransactions();
+    renderPL();
   }
 });
 
@@ -2409,6 +2416,7 @@ document.getElementById('txModalCategory').addEventListener('change', async (e)=
     t.category = e.target.value;
     await saveTransactions();
     renderTransactions();
+    renderPL();
   }
 });
 
@@ -2420,6 +2428,7 @@ document.getElementById('txModalAmount').addEventListener('change', async (e)=>{
     t.amount = val;
     await saveTransactions();
     renderTransactions();
+    renderPL();
   }
 });
 
@@ -2431,6 +2440,7 @@ document.getElementById('txModalDeleteBtn').addEventListener('click', async ()=>
   await saveTransactions();
   closeTxModal();
   renderTransactions();
+  renderPL();
 });
 
 loadData();
