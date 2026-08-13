@@ -714,12 +714,10 @@ const fmtEuro = (n) => {
   return (n < 0 ? '-' : '') + s + ' €';
 };
 const fmtPlain = (n) => {
-  const neg = n < 0;
-  const v = Math.abs(Math.round(n));
-  const s = v.toString();
-  return neg ? '-' + s : s;
+  const s = Math.abs(n).toLocaleString('de-DE', {minimumFractionDigits:2, maximumFractionDigits:2});
+  return (n < 0 ? '-' : '') + s;
 };
-const fmtAxis = (n) => Math.round(n).toString();
+const fmtAxis = (n) => n.toLocaleString('de-DE', {minimumFractionDigits:2, maximumFractionDigits:2});
 
 let accounts = [];
 let snapshots = [];
@@ -963,7 +961,7 @@ function renderChart(){
     return;
   }
 
-  const w = 320, h = 160, padL = 40, padR = 4, padT = 10, padB = 10;
+  const w = 320, h = 160, padL = 52, padR = 4, padT = 10, padB = 10;
   const netVals = sorted.map(s=>s.netWorth);
   const assetVals = sorted.map(s=>s.assetsTotal);
   const liabVals = sorted.map(s=>s.liabilitiesTotal);
@@ -990,7 +988,7 @@ function renderChart(){
     const gy = padT + (i/guideCount) * (h - padT - padB);
     const val = max - (i/guideCount) * range;
     grid += `<line x1="${padL}" y1="${gy.toFixed(1)}" x2="${w-padR}" y2="${gy.toFixed(1)}" stroke="rgba(237,230,214,0.08)" stroke-width="1"/>`;
-    axisLabels += `<text x="${padL-6}" y="${(gy+3).toFixed(1)}" text-anchor="end" fill="#8F96A3" font-family="IBM Plex Mono, monospace" font-size="8.5">${fmtAxis(val)}</text>`;
+    axisLabels += `<text x="${padL-6}" y="${(gy+3).toFixed(1)}" text-anchor="end" fill="#8F96A3" font-family="IBM Plex Mono, monospace" font-size="7.5">${fmtAxis(val)}</text>`;
   }
   if(min < 0 && max > 0){
     const zy = yFor(0);
@@ -1091,7 +1089,7 @@ function renderModalChart(acc){
   const vals = sorted.map(s=> s.accounts.find(sa=>sa.id===acc.id).balance);
   const color = acc.type==='asset' ? '#C9A15C' : '#B5584A';
 
-  const w = 320, h = 120, padL = 40, padR = 4, padT = 8, padB = 8;
+  const w = 320, h = 120, padL = 52, padR = 4, padT = 8, padB = 8;
   const min = Math.min(...vals, 0);
   const max = Math.max(...vals, 0);
   const range = (max - min) || 1;
@@ -1107,7 +1105,7 @@ function renderModalChart(acc){
     const gy = padT + (i/3) * (h - padT - padB);
     const val = max - (i/3) * range;
     grid += `<line x1="${padL}" y1="${gy.toFixed(1)}" x2="${w-padR}" y2="${gy.toFixed(1)}" stroke="rgba(237,230,214,0.08)" stroke-width="1"/>`;
-    axisLabels += `<text x="${padL-6}" y="${(gy+3).toFixed(1)}" text-anchor="end" fill="#8F96A3" font-family="IBM Plex Mono, monospace" font-size="8.5">${fmtAxis(val)}</text>`;
+    axisLabels += `<text x="${padL-6}" y="${(gy+3).toFixed(1)}" text-anchor="end" fill="#8F96A3" font-family="IBM Plex Mono, monospace" font-size="7.5">${fmtAxis(val)}</text>`;
   }
 
   const dots = vals.map((v,i)=> `<circle cx="${xFor(i).toFixed(1)}" cy="${yFor(v).toFixed(1)}" r="2.2" fill="${color}"/>`).join('');
@@ -1170,7 +1168,7 @@ function renderAccountHistoryChart(){
   const vals = sorted.map(s=> s.accounts.find(sa=>sa.id===accountId).balance);
   const color = acc.type==='asset' ? '#C9A15C' : '#B5584A';
 
-  const w = 320, h = 110, padL = 38, padR = 4, padT = 8, padB = 8;
+  const w = 320, h = 110, padL = 52, padR = 4, padT = 8, padB = 8;
   const min = Math.min(...vals, 0);
   const max = Math.max(...vals, 0);
   const range = (max - min) || 1;
@@ -1186,7 +1184,7 @@ function renderAccountHistoryChart(){
     const gy = padT + (i/3) * (h - padT - padB);
     const val = max - (i/3) * range;
     grid += `<line x1="${padL}" y1="${gy.toFixed(1)}" x2="${w-padR}" y2="${gy.toFixed(1)}" stroke="rgba(237,230,214,0.08)" stroke-width="1"/>`;
-    axisLabels += `<text x="${padL-6}" y="${(gy+3).toFixed(1)}" text-anchor="end" fill="#8F96A3" font-family="IBM Plex Mono, monospace" font-size="8.5">${fmtAxis(val)}</text>`;
+    axisLabels += `<text x="${padL-6}" y="${(gy+3).toFixed(1)}" text-anchor="end" fill="#8F96A3" font-family="IBM Plex Mono, monospace" font-size="7.5">${fmtAxis(val)}</text>`;
   }
 
   const dots = vals.map((v,i)=> `<circle cx="${xFor(i).toFixed(1)}" cy="${yFor(v).toFixed(1)}" r="2" fill="${color}"/>`).join('');
@@ -1209,7 +1207,7 @@ function renderMiniChart(svgId, valueKey, color){
     return;
   }
 
-  const w = 320, h = 90, padL = 38, padR = 4, padT = 8, padB = 8;
+  const w = 320, h = 90, padL = 52, padR = 4, padT = 8, padB = 8;
   const vals = sorted.map(s=> s[valueKey]);
   const min = Math.min(...vals, 0);
   const max = Math.max(...vals, 0);
@@ -1226,7 +1224,7 @@ function renderMiniChart(svgId, valueKey, color){
     const gy = padT + (i/3) * (h - padT - padB);
     const val = max - (i/3) * range;
     grid += `<line x1="${padL}" y1="${gy.toFixed(1)}" x2="${w-padR}" y2="${gy.toFixed(1)}" stroke="rgba(237,230,214,0.08)" stroke-width="1"/>`;
-    axisLabels += `<text x="${padL-6}" y="${(gy+3).toFixed(1)}" text-anchor="end" fill="#8F96A3" font-family="IBM Plex Mono, monospace" font-size="8.5">${fmtAxis(val)}</text>`;
+    axisLabels += `<text x="${padL-6}" y="${(gy+3).toFixed(1)}" text-anchor="end" fill="#8F96A3" font-family="IBM Plex Mono, monospace" font-size="7.5">${fmtAxis(val)}</text>`;
   }
 
   const dots = vals.map((v,i)=> `<circle cx="${xFor(i).toFixed(1)}" cy="${yFor(v).toFixed(1)}" r="2" fill="${color}"/>`).join('');
