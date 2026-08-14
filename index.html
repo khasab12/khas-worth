@@ -380,6 +380,23 @@
   .tx-row .tx-amount.income{color:var(--gold);}
   .tx-row .tx-amount.expense{color:var(--burgundy);}
 
+  .tx-pagination{
+    display:flex;align-items:center;justify-content:center;gap:14px;
+    margin-top:14px;
+  }
+  .tx-page-btn{
+    background:none;border:1px solid var(--line-strong);color:var(--text);
+    font-family:'IBM Plex Sans', sans-serif;font-size:12.5px;font-weight:500;
+    padding:8px 14px;border-radius:8px;cursor:pointer;
+  }
+  .tx-page-btn:hover{border-color:var(--gold-dim);}
+  .tx-page-btn:disabled{opacity:0.35;cursor:default;}
+  .tx-page-btn:disabled:hover{border-color:var(--line-strong);}
+  .tx-page-label{
+    font-family:'IBM Plex Mono', monospace;font-size:11.5px;color:var(--text-muted);
+    white-space:nowrap;
+  }
+
   /* P&L tab */
   .pl-settings-row{display:flex;justify-content:flex-end;margin-bottom:16px;}
   .pl-top-figures{display:flex;gap:8px;}
@@ -610,6 +627,7 @@
       </div>
       <input type="file" id="txCsvFileInput" accept=".csv,text/csv" style="display:none" />
       <div class="hist-rows" id="txRows"></div>
+      <div class="tx-pagination" id="txPagination"></div>
     </section>
 
   </div>
@@ -981,6 +999,7 @@ const fmtAxis = (n) => Math.round(n).toString();
 let accounts = [];
 let snapshots = [];
 let transactions = [];
+let txCurrentPage = 1;
 let dividends = [];
 let budgets = [];
 
@@ -1151,15 +1170,25 @@ function renderTransactions(){
   const container = document.getElementById('txRows');
   if(transactions.length===0){
     container.innerHTML = `<div class="empty">No transactions yet — add your first above.</div>`;
+    document.getElementById('txPagination').innerHTML = '';
     return;
   }
   if(filteredTx.length===0){
     container.innerHTML = `<div class="empty">No transactions match the current filters.</div>`;
+    document.getElementById('txPagination').innerHTML = '';
     return;
   }
   const sorted = [...filteredTx].sort((a,b)=> new Date(b.date) - new Date(a.date));
+
+  const PAGE_SIZE = 25;
+  const totalPages = Math.max(1, Math.ceil(sorted.length / PAGE_SIZE));
+  if(txCurrentPage > totalPages) txCurrentPage = totalPages;
+  if(txCurrentPage < 1) txCurrentPage = 1;
+  const pageStart = (txCurrentPage-1) * PAGE_SIZE;
+  const pageItems = sorted.slice(pageStart, pageStart + PAGE_SIZE);
+
   container.innerHTML = '';
-  sorted.forEach(t=>{
+  pageItems.forEach(t=>{
     const acc = accounts.find(a=>a.id===t.accountId);
     const accLabel = acc ? acc.name : (t.accountName || 'Deleted account');
     const d = new Date(t.date + 'T12:00:00');
@@ -1191,6 +1220,21 @@ function renderTransactions(){
       renderPL();
     });
   });
+
+  const pagContainer = document.getElementById('txPagination');
+  if(totalPages <= 1){
+    pagContainer.innerHTML = '';
+  } else {
+    pagContainer.innerHTML = `
+      <button class="tx-page-btn" id="txPrevPage" ${txCurrentPage<=1?'disabled':''}>← Prev</button>
+      <span class="tx-page-label">Page ${txCurrentPage} of ${totalPages}</span>
+      <button class="tx-page-btn" id="txNextPage" ${txCurrentPage>=totalPages?'disabled':''}>Next →</button>
+    `;
+    const prevBtn = document.getElementById('txPrevPage');
+    const nextBtn = document.getElementById('txNextPage');
+    if(prevBtn) prevBtn.addEventListener('click', ()=>{ txCurrentPage--; renderTransactions(); window.scrollTo(0,0); });
+    if(nextBtn) nextBtn.addEventListener('click', ()=>{ txCurrentPage++; renderTransactions(); window.scrollTo(0,0); });
+  }
 }
 
 const CATEGORY_GROUPS = {
@@ -2376,8 +2420,8 @@ document.querySelectorAll('.nav-btn').forEach(btn=>{
 const txDateInput = document.getElementById('txDate');
 txDateInput.value = new Date().toISOString().slice(0,10);
 
-document.getElementById('txCategoryFilterSelect').addEventListener('change', renderTransactions);
-document.getElementById('txPeriodSelect').addEventListener('change', renderTransactions);
+document.getElementById('txCategoryFilterSelect').addEventListener('change', ()=>{ txCurrentPage = 1; renderTransactions(); });
+document.getElementById('txPeriodSelect').addEventListener('change', ()=>{ txCurrentPage = 1; renderTransactions(); });
 
 document.getElementById('plMonthSelect').addEventListener('change', renderPL);
 
@@ -2415,6 +2459,7 @@ document.getElementById('txSave').addEventListener('click', async ()=>{
   document.getElementById('txAmount').value = '';
   document.querySelectorAll('#txSignToggle .sign-btn').forEach(b=>b.classList.remove('active'));
   document.querySelector('#txSignToggle .sign-btn.minus').classList.add('active');
+  txCurrentPage = 1;
   renderTransactions();
   renderPL();
 });
@@ -2509,6 +2554,7 @@ document.getElementById('txCsvFileInput').addEventListener('change', (e)=>{
       });
 
       await saveTransactions();
+      txCurrentPage = 1;
       renderTransactions();
       renderPL();
       alert(`Imported ${imported} transaction${imported===1?'':'s'}.` + (skipped>0 ? ` Skipped ${skipped} invalid row${skipped===1?'':'s'}.` : ''));
