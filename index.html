@@ -240,7 +240,14 @@
   .export-btn:hover{color:var(--text);border-color:var(--gold-dim);}
   .export-btn.danger{color:var(--burgundy-dim);border-color:var(--burgundy-dim);}
   .export-btn.danger:hover{color:#FFFFFF;background:var(--burgundy);border-color:var(--burgundy);}
-  .hist-actions{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end;}
+  .hist-actions{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end;}
+  .icon-action-btn{
+    background:none;border:1px solid var(--line-strong);color:var(--text-muted);
+    font-size:13px;line-height:1;padding:6px 9px;border-radius:7px;cursor:pointer;
+  }
+  .icon-action-btn:hover{color:var(--text);border-color:var(--gold-dim);}
+  .icon-action-btn.danger{color:var(--burgundy-dim);border-color:var(--burgundy-dim);}
+  .icon-action-btn.danger:hover{color:#FFFFFF;background:var(--burgundy);border-color:var(--burgundy);}
   .hist-rows{border-top:1px solid var(--line);}
   .hist-row{
     display:flex;justify-content:space-between;align-items:center;
@@ -411,7 +418,7 @@
     letter-spacing:-0.01em;padding-bottom:8px;
   }
   .pl-header-row{
-    display:grid;grid-template-columns:1fr 58px 62px 58px;gap:6px;
+    display:grid;grid-template-columns:1fr 74px 74px 74px;gap:6px;
     padding:0 2px 8px;font-family:'IBM Plex Mono', monospace;font-size:9px;
     text-transform:uppercase;letter-spacing:0.05em;color:var(--text-muted);
   }
@@ -427,22 +434,22 @@
     font-family:'Fraunces', serif;font-weight:500;font-size:14px;margin:0;color:var(--text);
   }
   .pl-row{
-    display:grid;grid-template-columns:1fr 58px 62px 58px;gap:6px;align-items:center;
+    display:grid;grid-template-columns:1fr 74px 74px 74px;gap:6px;align-items:center;
     padding:6px 0;font-size:12px;color:var(--text-muted);
   }
   .pl-row .pl-row-label{
-    color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+    min-width:0;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
   }
   .pl-row .pl-row-amount{
     font-family:'IBM Plex Mono', monospace;font-variant-numeric:tabular-nums;color:var(--text);
-    text-align:right;
+    text-align:right;font-size:10.5px;white-space:nowrap;overflow:hidden;
   }
   .pl-row .pl-row-amount.diff-good{color:var(--gold);}
   .pl-row .pl-row-amount.diff-bad{color:var(--burgundy);}
   .pl-budget-input{
     background:var(--ink-700);border:1px solid var(--line);color:var(--text);
-    font-family:'IBM Plex Mono', monospace;font-size:11px;text-align:right;
-    padding:4px 5px;border-radius:5px;width:100%;min-width:0;
+    font-family:'IBM Plex Mono', monospace;font-size:10.5px;text-align:right;
+    padding:4px 4px;border-radius:5px;width:100%;min-width:0;box-sizing:border-box;
   }
   .pl-budget-input:focus{outline:none;border-color:var(--gold-dim);}
   .pl-row-total{
@@ -556,6 +563,9 @@
           <input type="text" id="txName" placeholder="Name (e.g. Groceries, Paycheck)" />
         </div>
         <div class="fr">
+          <input type="text" id="txReference" placeholder="Referenz (optional)" />
+        </div>
+        <div class="fr">
           <input type="date" id="txDate" class="date-input" />
           <div class="sign-toggle" id="txSignToggle">
             <button type="button" class="sign-btn minus active" data-sign="expense" aria-label="Expense (minus)">−</button>
@@ -578,12 +588,10 @@
               <option>Miete</option>
               <option>Kredit</option>
               <option>Abos</option>
-              <option>Internet</option>
               <option>Strom</option>
-              <option>Mobilfunk</option>
+              <option>Telekommunikation</option>
               <option>AE</option>
               <option>Kita</option>
-              <option>Rundfunk</option>
             </optgroup>
             <optgroup label="C Notwendige Kosten">
               <option>Externverpflegung</option>
@@ -622,9 +630,9 @@
       <div class="ledger-head">
         <h2>Transactions <span id="txCountLabel">(0)</span></h2>
         <div class="hist-actions">
-          <button class="export-btn" id="txExportBtn">Export CSV</button>
-          <button class="export-btn" id="txImportBtn">Import CSV</button>
-          <button class="export-btn danger" id="txDeleteAllBtn">Delete All</button>
+          <button class="icon-action-btn" id="txExportBtn" title="Export CSV" aria-label="Export CSV">⇩</button>
+          <button class="icon-action-btn" id="txImportBtn" title="Import CSV" aria-label="Import CSV">⇧</button>
+          <button class="icon-action-btn danger" id="txDeleteAllBtn" title="Delete All" aria-label="Delete all transactions">🗑</button>
         </div>
       </div>
       <input type="file" id="txCsvFileInput" accept=".csv,text/csv" style="display:none" />
@@ -686,6 +694,7 @@
               <option>Bargeld</option>
               <option>Girokonto</option>
               <option>Gemeinschaftskonto</option>
+              <option>Debitkarte</option>
               <option>Depot</option>
               <option>Altersvorsorge</option>
             </select>
@@ -710,7 +719,6 @@
           </div>
           <div class="fr">
             <select id="liabCategory">
-              <option>Debitkarte</option>
               <option>Kreditkarte</option>
               <option>Lombardkredit</option>
               <option>Kredit</option>
@@ -923,6 +931,9 @@
     </div>
     <div class="tx-form tx-modal-form">
       <div class="fr">
+        <input type="text" id="txModalReference" placeholder="Referenz (optional)" />
+      </div>
+      <div class="fr">
         <input type="date" id="txModalDate" class="date-input" />
         <div class="sign-toggle" id="txModalSignToggle">
           <button type="button" class="sign-btn minus" data-sign="expense" aria-label="Expense (minus)">−</button>
@@ -945,12 +956,10 @@
             <option>Miete</option>
             <option>Kredit</option>
             <option>Abos</option>
-            <option>Internet</option>
             <option>Strom</option>
-            <option>Mobilfunk</option>
+            <option>Telekommunikation</option>
             <option>AE</option>
             <option>Kita</option>
-            <option>Rundfunk</option>
           </optgroup>
           <optgroup label="C Notwendige Kosten">
             <option>Externverpflegung</option>
@@ -1201,12 +1210,13 @@ function renderTransactions(){
     const accLabel = acc ? acc.name : (t.accountName || 'Deleted account');
     const d = new Date(t.date + 'T12:00:00');
     const dstr = d.toLocaleDateString('de-DE', {month:'short', day:'numeric', year:'numeric'});
+    const refPart = t.reference ? ` · ${escapeHtml(t.reference)}` : '';
     const row = document.createElement('div');
     row.className = 'tx-row';
     row.innerHTML = `
       <button class="tx-meta" data-id="${t.id}">
         <div class="tx-name">${escapeHtml(t.name)}</div>
-        <div class="tx-sub">${dstr} · ${escapeHtml(accLabel)} · ${escapeHtml(t.category)}</div>
+        <div class="tx-sub">${dstr} · ${escapeHtml(accLabel)} · ${escapeHtml(t.category)}${refPart}</div>
       </button>
       <span class="tx-amount ${t.type}">${t.type==='income'?'+':'-'}${fmtPlain(t.amount)}</span>
       <button class="del" data-id="${t.id}" title="Delete transaction" aria-label="Delete transaction">×</button>
@@ -1247,7 +1257,7 @@ function renderTransactions(){
 
 const CATEGORY_GROUPS = {
   'Gehalt':'A Einnahmen','Partneranteil':'A Einnahmen','Cashback':'A Einnahmen','Dividenden':'A Einnahmen','Zinseinnahmen':'A Einnahmen',
-  'Transport':'B Fixe Kosten','Versicherungen':'B Fixe Kosten','Miete':'B Fixe Kosten','Kredit':'B Fixe Kosten','Abos':'B Fixe Kosten','Internet':'B Fixe Kosten','Strom':'B Fixe Kosten','Mobilfunk':'B Fixe Kosten','AE':'B Fixe Kosten','Kita':'B Fixe Kosten','Rundfunk':'B Fixe Kosten',
+  'Transport':'B Fixe Kosten','Versicherungen':'B Fixe Kosten','Miete':'B Fixe Kosten','Kredit':'B Fixe Kosten','Abos':'B Fixe Kosten','Strom':'B Fixe Kosten','Telekommunikation':'B Fixe Kosten','AE':'B Fixe Kosten','Kita':'B Fixe Kosten',
   'Externverpflegung':'C Notwendige Kosten','Drogerie':'C Notwendige Kosten','Lebensmittel':'C Notwendige Kosten',
   'Freizeit':'D Variable Kosten','Gesundheit':'D Variable Kosten','Shopping':'D Variable Kosten','Restaurant':'D Variable Kosten','Zinsausgaben':'D Variable Kosten','Sonstiges':'D Variable Kosten',
   'Urlaub':'E Urlaub',
@@ -1626,6 +1636,7 @@ function renderTxModal(){
   if(!t){ closeTxModal(); return; }
 
   document.getElementById('txModalName').value = t.name;
+  document.getElementById('txModalReference').value = t.reference || '';
   document.getElementById('txModalDate').value = t.date;
   document.querySelectorAll('#txModalSignToggle .sign-btn').forEach(b=>{
     b.classList.toggle('active', b.dataset.sign === t.type);
@@ -1653,8 +1664,8 @@ function closeAccountModal(){
   currentModalAccountId = null;
 }
 
-const ASSET_CATEGORIES = ['Bargeld','Girokonto','Gemeinschaftskonto','Depot','Altersvorsorge'];
-const LIABILITY_CATEGORIES = ['Debitkarte','Kreditkarte','Lombardkredit','Kredit','Leihe'];
+const ASSET_CATEGORIES = ['Bargeld','Girokonto','Gemeinschaftskonto','Debitkarte','Depot','Altersvorsorge'];
+const LIABILITY_CATEGORIES = ['Kreditkarte','Lombardkredit','Kredit','Leihe'];
 
 function renderAccountModal(){
   const acc = accounts.find(a=>a.id===currentModalAccountId);
@@ -2445,6 +2456,7 @@ document.querySelectorAll('#txSignToggle .sign-btn').forEach(btn=>{
 
 document.getElementById('txSave').addEventListener('click', async ()=>{
   const name = document.getElementById('txName').value.trim();
+  const reference = document.getElementById('txReference').value.trim();
   const date = txDateInput.value;
   const activeSignBtn = document.querySelector('#txSignToggle .sign-btn.active');
   const type = activeSignBtn ? activeSignBtn.dataset.sign : 'expense';
@@ -2460,13 +2472,14 @@ document.getElementById('txSave').addEventListener('click', async ()=>{
   const acc = accounts.find(a=>a.id===accountId);
   transactions.push({
     id: 'tx_'+Date.now()+'_'+Math.random().toString(36).slice(2,7),
-    name, date, type, category,
+    name, reference, date, type, category,
     accountId, accountName: acc ? acc.name : '',
     amount
   });
   await saveTransactions();
 
   document.getElementById('txName').value = '';
+  document.getElementById('txReference').value = '';
   document.getElementById('txAmount').value = '';
   document.querySelectorAll('#txSignToggle .sign-btn').forEach(b=>b.classList.remove('active'));
   document.querySelector('#txSignToggle .sign-btn.minus').classList.add('active');
@@ -2478,11 +2491,11 @@ document.getElementById('txSave').addEventListener('click', async ()=>{
 document.getElementById('txExportBtn').addEventListener('click', ()=>{
   if(transactions.length===0){ alert('No transactions yet to export.'); return; }
   const sorted = [...transactions].sort((a,b)=> new Date(a.date) - new Date(b.date));
-  const header = ['Date','Name','Type','Account','Category','Amount'];
+  const header = ['Date','Name','Reference','Type','Account','Category','Amount'];
   const rows = sorted.map(t=>{
     const acc = accounts.find(a=>a.id===t.accountId);
     const accLabel = acc ? acc.name : (t.accountName || '');
-    return [t.date, t.name, t.type==='income'?'Income':'Expense', accLabel, t.category, t.amount.toFixed(2)]
+    return [t.date, t.name, t.reference || '', t.type==='income'?'Income':'Expense', accLabel, t.category, t.amount.toFixed(2)]
       .map(csvField).join(',');
   });
   const csv = [header.map(csvField).join(','), ...rows].join('\n');
@@ -2525,12 +2538,13 @@ document.getElementById('txCsvFileInput').addEventListener('change', (e)=>{
       const headerLooksValid = headerCells.some(h=> norm(h)==='date') && headerCells.some(h=> norm(h)==='amount');
       const dataLines = headerLooksValid ? lines.slice(1) : lines;
 
-      let dateIdx=0, nameIdx=1, typeIdx=2, accountIdx=3, categoryIdx=4, amountIdx=5;
+      let dateIdx=0, nameIdx=1, referenceIdx=-1, typeIdx=2, accountIdx=3, categoryIdx=4, amountIdx=5;
       if(headerLooksValid){
         headerCells.forEach((h,i)=>{
           const n = norm(h);
           if(n==='date') dateIdx=i;
           else if(n==='name') nameIdx=i;
+          else if(n==='reference') referenceIdx=i;
           else if(n==='type') typeIdx=i;
           else if(n==='account') accountIdx=i;
           else if(n==='category') categoryIdx=i;
@@ -2546,6 +2560,7 @@ document.getElementById('txCsvFileInput').addEventListener('change', (e)=>{
         const d = new Date(dateVal + 'T12:00:00');
         if(isNaN(d.getTime())){ skipped++; return; }
         const name = parts[nameIdx] || 'Transaction';
+        const reference = referenceIdx>-1 ? (parts[referenceIdx] || '') : '';
         const typeRaw = (parts[typeIdx]||'').toLowerCase();
         const type = typeRaw.startsWith('inc') ? 'income' : 'expense';
         const accountName = parts[accountIdx] || '';
@@ -2556,7 +2571,7 @@ document.getElementById('txCsvFileInput').addEventListener('change', (e)=>{
         const match = accounts.find(a=> a.name.toLowerCase() === accountName.toLowerCase());
         transactions.push({
           id: 'tx_import_'+Date.now()+'_'+imported+'_'+Math.random().toString(36).slice(2,6),
-          name, date: d.toISOString().slice(0,10), type, category,
+          name, reference, date: d.toISOString().slice(0,10), type, category,
           accountId: match ? match.id : '',
           accountName,
           amount
@@ -2691,6 +2706,15 @@ document.getElementById('txModalName').addEventListener('change', async (e)=>{
     renderPL();
   } else if(t){
     e.target.value = t.name;
+  }
+});
+
+document.getElementById('txModalReference').addEventListener('change', async (e)=>{
+  const t = transactions.find(x=>x.id===currentTxModalId);
+  if(t){
+    t.reference = e.target.value.trim();
+    await saveTransactions();
+    renderTransactions();
   }
 });
 
