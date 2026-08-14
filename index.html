@@ -352,6 +352,14 @@
   .tx-row .tx-amount.expense{color:var(--burgundy);}
 
   /* P&L tab */
+  .pl-settings-row{display:flex;justify-content:flex-end;margin-bottom:16px;}
+  .pl-top-figures{display:flex;gap:12px;}
+  .pl-top-figure{flex:1;min-width:0;}
+  .pl-top-figure .label{margin-bottom:6px;}
+  .pl-top-value{
+    font-size:30px;
+  }
+  .pl-top-figure:first-child .pl-top-value{color:var(--gold);}
   .pl-header-row{
     display:grid;grid-template-columns:1fr 58px 62px 58px;gap:6px;
     padding:0 2px 8px;font-family:'IBM Plex Mono', monospace;font-size:9px;
@@ -392,6 +400,10 @@
   }
   .pl-row-total .pl-row-label{color:var(--text);}
   .pl-row-total .pl-row-amount{color:var(--text);}
+  .pl-grand-total{
+    border-color:var(--gold-dim);background:var(--ink-700);
+  }
+  .pl-grand-total .pl-row-label{font-family:'Fraunces', serif;font-size:14px;}
 
   .mini-chart-section{margin-bottom:28px;}
   .mini-chart-section .ledger-head{margin-bottom:2px;}
@@ -572,11 +584,19 @@
   <div class="tab-panel" id="tabPL" style="display:none;">
 
     <section class="hero">
-      <div class="label-row">
-        <div class="label">P&amp;L</div>
+      <div class="pl-settings-row">
         <input type="month" id="plMonthSelect" class="year-select" />
       </div>
-      <div class="figure" id="plResultFigure">0,00 €</div>
+      <div class="pl-top-figures">
+        <div class="pl-top-figure">
+          <div class="label">Actual Total</div>
+          <div class="figure pl-top-value" id="plResultFigure">0,00 €</div>
+        </div>
+        <div class="pl-top-figure">
+          <div class="label">Act vs Bud Total</div>
+          <div class="figure pl-top-value" id="plDiffFigure">0,00 €</div>
+        </div>
+      </div>
     </section>
 
     <div id="plReport"></div>
@@ -1158,7 +1178,7 @@ function renderPL(){
 
   const monthTx = transactions.filter(t=> t.date.slice(0,7) === selectedMonth && t.category !== 'Umbuchung');
 
-  let grandTotal = 0;
+  let grandActual = 0, grandBudget = 0, grandDiff = 0;
   const container = document.getElementById('plReport');
   container.innerHTML = '';
 
@@ -1176,17 +1196,15 @@ function renderPL(){
     const isIncomeGroup = groupName === 'A Einnahmen';
     const categoriesInGroup = Object.keys(CATEGORY_GROUPS).filter(c=> CATEGORY_GROUPS[c] === groupName);
 
-    let groupSigned = 0, groupActual = 0, groupBudget = 0, groupDiff = 0;
+    let groupActual = 0, groupBudget = 0, groupDiff = 0;
 
     const rowsHtml = categoriesInGroup.map(cat=>{
       const catTx = monthTx.filter(t=>t.category===cat);
-      const signed = catTx.reduce((s,t)=> s + (t.type==='income' ? t.amount : -t.amount), 0);
       const actual = catTx.reduce((s,t)=> s + Number(t.amount||0), 0);
       const budgetVal = getBudget(selectedMonth, cat);
       const budgetNum = budgetVal===null ? 0 : budgetVal;
       const diff = actual - budgetNum;
 
-      groupSigned += signed;
       groupActual += actual;
       groupBudget += budgetNum;
       groupDiff += diff;
@@ -1202,7 +1220,9 @@ function renderPL(){
       </div>`;
     }).join('');
 
-    grandTotal += groupSigned;
+    grandActual += groupActual;
+    grandBudget += groupBudget;
+    grandDiff += groupDiff;
 
     const groupDiffGood = isIncomeGroup ? groupDiff >= 0 : groupDiff <= 0;
     const groupDiffClass = Math.abs(groupDiff) < 0.005 ? '' : (groupDiffGood ? 'diff-good' : 'diff-bad');
@@ -1224,6 +1244,19 @@ function renderPL(){
     container.appendChild(groupEl);
   });
 
+  const grandDiffClass = Math.abs(grandDiff) < 0.005 ? '' : (grandDiff <= 0 ? 'diff-good' : 'diff-bad');
+  const grandEl = document.createElement('div');
+  grandEl.className = 'pl-group pl-grand-total';
+  grandEl.innerHTML = `
+    <div class="pl-row pl-row-total">
+      <span class="pl-row-label">Grand Total</span>
+      <span class="pl-row-amount">${fmtPlain(grandActual)}</span>
+      <span class="pl-row-amount">${fmtPlain(grandBudget)}</span>
+      <span class="pl-row-amount ${grandDiffClass}">${fmtPlain(grandDiff)}</span>
+    </div>
+  `;
+  container.appendChild(grandEl);
+
   container.querySelectorAll('.pl-budget-input').forEach(inp=>{
     inp.addEventListener('change', async (e)=>{
       const cat = e.target.dataset.category;
@@ -1234,9 +1267,10 @@ function renderPL(){
     });
   });
 
-  const resultEl = document.getElementById('plResultFigure');
-  resultEl.textContent = fmtEuro(grandTotal);
-  resultEl.style.color = grandTotal > 0 ? 'var(--gold)' : (grandTotal < 0 ? 'var(--burgundy)' : '');
+  document.getElementById('plResultFigure').textContent = fmtEuro(grandActual);
+  const diffEl = document.getElementById('plDiffFigure');
+  diffEl.textContent = fmtEuro(grandDiff);
+  diffEl.style.color = grandDiff > 0 ? 'var(--burgundy)' : (grandDiff < 0 ? 'var(--gold)' : '');
 }
 
 function renderDividends(){
@@ -1923,13 +1957,13 @@ function exportSingleSnapshotCSV(snapId){
   if(Array.isArray(snap.accounts) && snap.accounts.length){
     lines.push(['Account','Type','Category','Balance'].map(csvField).join(','));
     snap.accounts.forEach(sa=>{
-      lines.push([sa.name, sa.type==='asset'?'Asset':'Liability', sa.category, Math.round(sa.balance)].map(csvField).join(','));
+      lines.push([sa.name, sa.type==='asset'?'Asset':'Liability', sa.category, sa.balance.toFixed(2)].map(csvField).join(','));
     });
     lines.push('');
   }
-  lines.push(['Assets Total', Math.round(snap.assetsTotal)].map(csvField).join(','));
-  lines.push(['Liabilities Total', Math.round(snap.liabilitiesTotal)].map(csvField).join(','));
-  lines.push(['Net Worth', Math.round(snap.netWorth)].map(csvField).join(','));
+  lines.push(['Assets Total', snap.assetsTotal.toFixed(2)].map(csvField).join(','));
+  lines.push(['Liabilities Total', snap.liabilitiesTotal.toFixed(2)].map(csvField).join(','));
+  lines.push(['Net Worth', snap.netWorth.toFixed(2)].map(csvField).join(','));
 
   const csv = lines.join('\n');
   const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
@@ -2068,8 +2102,8 @@ document.getElementById('exportBtn').addEventListener('click', ()=>{
     if(Array.isArray(s.accounts)){
       s.accounts.forEach(sa=>{ balById[sa.id] = sa.balance; });
     }
-    const cols = idsOrdered.map(id=> balById.hasOwnProperty(id) ? Math.round(balById[id]) : '');
-    return [dstr, ...cols, Math.round(s.assetsTotal), Math.round(s.liabilitiesTotal), Math.round(s.netWorth)]
+    const cols = idsOrdered.map(id=> balById.hasOwnProperty(id) ? balById[id].toFixed(2) : '');
+    return [dstr, ...cols, s.assetsTotal.toFixed(2), s.liabilitiesTotal.toFixed(2), s.netWorth.toFixed(2)]
       .map(csvField).join(',');
   });
 
@@ -2320,7 +2354,7 @@ document.getElementById('txExportBtn').addEventListener('click', ()=>{
   const rows = sorted.map(t=>{
     const acc = accounts.find(a=>a.id===t.accountId);
     const accLabel = acc ? acc.name : (t.accountName || '');
-    return [t.date, t.name, t.type==='income'?'Income':'Expense', accLabel, t.category, Math.round(t.amount)]
+    return [t.date, t.name, t.type==='income'?'Income':'Expense', accLabel, t.category, t.amount.toFixed(2)]
       .map(csvField).join(',');
   });
   const csv = [header.map(csvField).join(','), ...rows].join('\n');
