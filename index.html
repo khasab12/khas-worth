@@ -81,7 +81,7 @@
   .ledger{margin-bottom:28px;}
   .ledger-head{
     display:flex;justify-content:space-between;align-items:baseline;
-    margin-bottom:2px;
+    margin-bottom:2px;flex-wrap:wrap;gap:8px 0;
   }
   .ledger-head h2{
     font-family:'Fraunces', serif;font-weight:500;font-size:17px;margin:0;
@@ -93,6 +93,22 @@
   }
   .ledger.assets .ledger-head .total{color:var(--gold);}
   .ledger.liabilities .ledger-head .total{color:var(--burgundy);}
+
+  .cat-group{margin-top:16px;}
+  .cat-group:first-child{margin-top:10px;}
+  .cat-group-head{
+    display:flex;justify-content:space-between;align-items:baseline;
+    padding:0 0 4px;
+  }
+  .cat-group-name{
+    font-family:'IBM Plex Mono', monospace;font-size:10.5px;color:var(--text-muted);
+    text-transform:uppercase;letter-spacing:0.07em;
+  }
+  .cat-group-total{
+    font-family:'IBM Plex Mono', monospace;font-size:11.5px;color:var(--text-muted);
+    font-variant-numeric:tabular-nums;
+  }
+  .cat-group .rows{margin-top:0;}
 
   .rows{margin-top:10px;padding-left:15px;border-left:1px solid var(--line);}
   .row{
@@ -220,7 +236,9 @@
     padding:6px 10px;border-radius:7px;cursor:pointer;
   }
   .export-btn:hover{color:var(--text);border-color:var(--gold-dim);}
-  .hist-actions{display:flex;gap:8px;}
+  .export-btn.danger{color:var(--burgundy-dim);border-color:var(--burgundy-dim);}
+  .export-btn.danger:hover{color:#FFFFFF;background:var(--burgundy);border-color:var(--burgundy);}
+  .hist-actions{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end;}
   .hist-rows{border-top:1px solid var(--line);}
   .hist-row{
     display:flex;justify-content:space-between;align-items:center;
@@ -322,6 +340,17 @@
     font-family:'IBM Plex Sans', sans-serif;font-size:13.5px;padding:9px 10px;border-radius:7px;
   }
   .tx-form input[type=number]{font-family:'IBM Plex Mono', monospace;}
+  .sign-toggle{
+    display:flex;background:var(--ink-700);border:1px solid var(--line);border-radius:7px;
+    overflow:hidden;flex:1;min-width:0;
+  }
+  .sign-btn{
+    flex:1;background:none;border:none;color:var(--text-muted);cursor:pointer;
+    font-family:'IBM Plex Mono', monospace;font-size:16px;font-weight:600;padding:9px 0;
+    transition:background 0.12s, color 0.12s;
+  }
+  .sign-btn.minus.active{background:var(--burgundy);color:#FFFFFF;}
+  .sign-btn.plus.active{background:var(--gold);color:var(--ink-900);}
   .tx-save-btn{
     width:100%;background:var(--paper);color:var(--ink-900);
     font-size:15.5px;font-weight:700;padding:15px;border-radius:10px;margin-top:4px;
@@ -353,11 +382,14 @@
 
   /* P&L tab */
   .pl-settings-row{display:flex;justify-content:flex-end;margin-bottom:16px;}
-  .pl-top-figures{display:flex;gap:12px;}
+  .pl-top-figures{display:flex;gap:8px;}
   .pl-top-figure{flex:1;min-width:0;}
-  .pl-top-figure .label{margin-bottom:6px;}
+  .pl-top-figure .label{
+    margin-bottom:6px;font-size:9.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  }
   .pl-top-value{
-    font-size:10px;
+    font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+    letter-spacing:-0.01em;padding-bottom:8px;
   }
   .pl-top-figure:first-child .pl-top-value{color:var(--gold);}
   .pl-header-row{
@@ -506,10 +538,10 @@
         </div>
         <div class="fr">
           <input type="date" id="txDate" class="date-input" />
-          <select id="txTypeSelect">
-            <option value="expense">Expense</option>
-            <option value="income">Income</option>
-          </select>
+          <div class="sign-toggle" id="txSignToggle">
+            <button type="button" class="sign-btn minus active" data-sign="expense" aria-label="Expense (minus)">−</button>
+            <button type="button" class="sign-btn plus" data-sign="income" aria-label="Income (plus)">+</button>
+          </div>
         </div>
         <div class="fr">
           <select id="txAccountSelect"></select>
@@ -569,10 +601,11 @@
 
     <section class="tx-list">
       <div class="ledger-head">
-        <h2>Transactions</h2>
+        <h2>Transactions <span id="txCountLabel">(0)</span></h2>
         <div class="hist-actions">
           <button class="export-btn" id="txExportBtn">Export CSV</button>
           <button class="export-btn" id="txImportBtn">Import CSV</button>
+          <button class="export-btn danger" id="txDeleteAllBtn">Delete All</button>
         </div>
       </div>
       <input type="file" id="txCsvFileInput" accept=".csv,text/csv" style="display:none" />
@@ -865,10 +898,10 @@
     <div class="tx-form tx-modal-form">
       <div class="fr">
         <input type="date" id="txModalDate" class="date-input" />
-        <select id="txModalType">
-          <option value="expense">Expense</option>
-          <option value="income">Income</option>
-        </select>
+        <div class="sign-toggle" id="txModalSignToggle">
+          <button type="button" class="sign-btn minus" data-sign="expense" aria-label="Expense (minus)">−</button>
+          <button type="button" class="sign-btn plus" data-sign="income" aria-label="Income (plus)">+</button>
+        </div>
       </div>
       <div class="fr">
         <select id="txModalAccount"></select>
@@ -1107,6 +1140,8 @@ function renderTransactions(){
     return true;
   });
 
+  document.getElementById('txCountLabel').textContent = `(${filteredTx.length})`;
+
   const income = filteredTx.filter(t=>t.type==='income' && t.category!=='Umbuchung').reduce((s,t)=>s+Number(t.amount||0),0);
   const expense = filteredTx.filter(t=>t.type==='expense' && t.category!=='Umbuchung').reduce((s,t)=>s+Number(t.amount||0),0);
   document.getElementById('txIncomeTotal').textContent = fmtEuro(income);
@@ -1200,7 +1235,7 @@ function renderPL(){
 
     const rowsHtml = categoriesInGroup.map(cat=>{
       const catTx = monthTx.filter(t=>t.category===cat);
-      const actual = catTx.reduce((s,t)=> s + Number(t.amount||0), 0);
+      const actual = catTx.reduce((s,t)=> s + (t.type==='income' ? Number(t.amount||0) : -Number(t.amount||0)), 0);
       const budgetVal = getBudget(selectedMonth, cat);
       const budgetNum = budgetVal===null ? 0 : budgetVal;
       const diff = actual - budgetNum;
@@ -1333,22 +1368,47 @@ function renderRows(type, containerId){
     container.innerHTML = `<div class="empty">No ${type==='asset'?'assets':'liabilities'} yet — add one below.</div>`;
     return;
   }
+
+  const orderedCategories = type==='asset' ? ASSET_CATEGORIES : LIABILITY_CATEGORIES;
+  const presentCategories = [...new Set(rows.map(a=>a.category))];
+  const categoryOrder = [
+    ...orderedCategories.filter(c=> presentCategories.includes(c)),
+    ...presentCategories.filter(c=> !orderedCategories.includes(c))
+  ];
+
   container.innerHTML = '';
-  rows.forEach(acc=>{
-    const row = document.createElement('div');
-    row.className = 'row';
-    row.innerHTML = `
-      <div class="meta">
-        <button class="name-btn" data-id="${acc.id}"><span class="name">${escapeHtml(acc.name)}</span></button>
-        <div class="cat">${escapeHtml(acc.category)}</div>
+  categoryOrder.forEach(cat=>{
+    const catRows = rows.filter(a=>a.category===cat);
+    if(catRows.length===0) return;
+    const subtotal = catRows.reduce((s,a)=> s + Number(a.balance||0), 0);
+
+    const groupEl = document.createElement('div');
+    groupEl.className = 'cat-group';
+    groupEl.innerHTML = `
+      <div class="cat-group-head">
+        <span class="cat-group-name">${escapeHtml(cat)}</span>
+        <span class="cat-group-total">${fmtEuro(subtotal)}</span>
       </div>
-      <div class="right">
-        <input class="balance" type="number" inputmode="decimal" value="${acc.balance}" data-id="${acc.id}" />
-        <button class="del" data-id="${acc.id}" title="Delete" aria-label="Delete ${escapeHtml(acc.name)}">×</button>
-      </div>
+      <div class="rows"></div>
     `;
-    container.appendChild(row);
+    const rowsContainer = groupEl.querySelector('.rows');
+    catRows.forEach(acc=>{
+      const row = document.createElement('div');
+      row.className = 'row';
+      row.innerHTML = `
+        <div class="meta">
+          <button class="name-btn" data-id="${acc.id}"><span class="name">${escapeHtml(acc.name)}</span></button>
+        </div>
+        <div class="right">
+          <input class="balance" type="number" inputmode="decimal" value="${acc.balance}" data-id="${acc.id}" />
+          <button class="del" data-id="${acc.id}" title="Delete" aria-label="Delete ${escapeHtml(acc.name)}">×</button>
+        </div>
+      `;
+      rowsContainer.appendChild(row);
+    });
+    container.appendChild(groupEl);
   });
+
   container.querySelectorAll('.name-btn').forEach(btn=>{
     btn.addEventListener('click', (e)=>{
       const id = e.currentTarget.dataset.id;
@@ -1512,7 +1572,9 @@ function renderTxModal(){
 
   document.getElementById('txModalName').value = t.name;
   document.getElementById('txModalDate').value = t.date;
-  document.getElementById('txModalType').value = t.type;
+  document.querySelectorAll('#txModalSignToggle .sign-btn').forEach(b=>{
+    b.classList.toggle('active', b.dataset.sign === t.type);
+  });
   document.getElementById('txModalAmount').value = t.amount;
   populateTxModalAccountSelect(t.accountId);
 
@@ -2319,10 +2381,18 @@ document.getElementById('txPeriodSelect').addEventListener('change', renderTrans
 
 document.getElementById('plMonthSelect').addEventListener('change', renderPL);
 
+document.querySelectorAll('#txSignToggle .sign-btn').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    document.querySelectorAll('#txSignToggle .sign-btn').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+  });
+});
+
 document.getElementById('txSave').addEventListener('click', async ()=>{
   const name = document.getElementById('txName').value.trim();
   const date = txDateInput.value;
-  const type = document.getElementById('txTypeSelect').value;
+  const activeSignBtn = document.querySelector('#txSignToggle .sign-btn.active');
+  const type = activeSignBtn ? activeSignBtn.dataset.sign : 'expense';
   const accountId = document.getElementById('txAccountSelect').value;
   const category = document.getElementById('txCategorySelect').value;
   const amount = Number(document.getElementById('txAmount').value) || 0;
@@ -2343,6 +2413,8 @@ document.getElementById('txSave').addEventListener('click', async ()=>{
 
   document.getElementById('txName').value = '';
   document.getElementById('txAmount').value = '';
+  document.querySelectorAll('#txSignToggle .sign-btn').forEach(b=>b.classList.remove('active'));
+  document.querySelector('#txSignToggle .sign-btn.minus').classList.add('active');
   renderTransactions();
   renderPL();
 });
@@ -2371,6 +2443,16 @@ document.getElementById('txExportBtn').addEventListener('click', ()=>{
 
 document.getElementById('txImportBtn').addEventListener('click', ()=>{
   document.getElementById('txCsvFileInput').click();
+});
+
+document.getElementById('txDeleteAllBtn').addEventListener('click', async ()=>{
+  if(transactions.length===0){ alert('There are no transactions to delete.'); return; }
+  const count = transactions.length;
+  if(!confirm(`Delete all ${count} transaction${count===1?'':'s'}? This can't be undone.`)) return;
+  transactions = [];
+  await saveTransactions();
+  renderTransactions();
+  renderPL();
 });
 document.getElementById('txCsvFileInput').addEventListener('change', (e)=>{
   const file = e.target.files[0];
@@ -2565,14 +2647,18 @@ document.getElementById('txModalDate').addEventListener('change', async (e)=>{
   }
 });
 
-document.getElementById('txModalType').addEventListener('change', async (e)=>{
-  const t = transactions.find(x=>x.id===currentTxModalId);
-  if(t){
-    t.type = e.target.value;
-    await saveTransactions();
-    renderTransactions();
-    renderPL();
-  }
+document.querySelectorAll('#txModalSignToggle .sign-btn').forEach(btn=>{
+  btn.addEventListener('click', async ()=>{
+    const t = transactions.find(x=>x.id===currentTxModalId);
+    if(t){
+      t.type = btn.dataset.sign;
+      document.querySelectorAll('#txModalSignToggle .sign-btn').forEach(b=>b.classList.remove('active'));
+      btn.classList.add('active');
+      await saveTransactions();
+      renderTransactions();
+      renderPL();
+    }
+  });
 });
 
 document.getElementById('txModalAccount').addEventListener('change', async (e)=>{
