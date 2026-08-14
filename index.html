@@ -37,7 +37,7 @@
     min-height:100vh;
     padding-bottom:48px;
   }
-  .app{max-width:520px;margin:0.4cm auto 0;padding:32px 18px 0;}
+  .app{max-width:520px;margin:0 auto;padding:calc(32px + 0.8cm + env(safe-area-inset-top)) 18px 0;}
 
   /* Hero net worth */
   .hero{margin-bottom:34px;}
@@ -357,7 +357,7 @@
   .pl-top-figure{flex:1;min-width:0;}
   .pl-top-figure .label{margin-bottom:6px;}
   .pl-top-value{
-    font-size:30px;
+    font-size:20px;
   }
   .pl-top-figure:first-child .pl-top-value{color:var(--gold);}
   .pl-header-row{
