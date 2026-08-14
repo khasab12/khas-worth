@@ -352,31 +352,46 @@
   .tx-row .tx-amount.expense{color:var(--burgundy);}
 
   /* P&L tab */
+  .pl-header-row{
+    display:grid;grid-template-columns:1fr 58px 62px 58px;gap:6px;
+    padding:0 2px 8px;font-family:'IBM Plex Mono', monospace;font-size:9px;
+    text-transform:uppercase;letter-spacing:0.05em;color:var(--text-muted);
+  }
+  .pl-header-row .pl-col-num{text-align:right;}
   .pl-group{
-    margin-bottom:22px;padding:14px 16px;border:1px solid var(--line-strong);border-radius:var(--radius);
+    margin-bottom:20px;padding:12px 14px;border:1px solid var(--line-strong);border-radius:var(--radius);
     background:var(--ink-800);
   }
   .pl-group-head{
-    display:flex;justify-content:space-between;align-items:baseline;
-    padding-bottom:8px;margin-bottom:6px;border-bottom:1px solid var(--line-strong);
+    padding-bottom:6px;margin-bottom:4px;border-bottom:1px solid var(--line-strong);
   }
   .pl-group-title{
-    font-family:'Fraunces', serif;font-weight:500;font-size:14.5px;margin:0;color:var(--text);
+    font-family:'Fraunces', serif;font-weight:500;font-size:14px;margin:0;color:var(--text);
   }
-  .pl-group-total{
-    font-family:'IBM Plex Mono', monospace;font-size:13.5px;font-variant-numeric:tabular-nums;
-  }
-  .pl-group-total.positive{color:var(--gold);}
-  .pl-group-total.negative{color:var(--burgundy);}
   .pl-row{
-    display:flex;justify-content:space-between;align-items:center;
-    padding:7px 0;font-size:13px;color:var(--text-muted);
+    display:grid;grid-template-columns:1fr 58px 62px 58px;gap:6px;align-items:center;
+    padding:6px 0;font-size:12px;color:var(--text-muted);
   }
-  .pl-row .pl-row-label{color:var(--text);}
+  .pl-row .pl-row-label{
+    color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+  }
   .pl-row .pl-row-amount{
     font-family:'IBM Plex Mono', monospace;font-variant-numeric:tabular-nums;color:var(--text);
+    text-align:right;
   }
-  .pl-row.zero{opacity:0.45;}
+  .pl-row .pl-row-amount.diff-good{color:var(--gold);}
+  .pl-row .pl-row-amount.diff-bad{color:var(--burgundy);}
+  .pl-budget-input{
+    background:var(--ink-700);border:1px solid var(--line);color:var(--text);
+    font-family:'IBM Plex Mono', monospace;font-size:11px;text-align:right;
+    padding:4px 5px;border-radius:5px;width:100%;min-width:0;
+  }
+  .pl-budget-input:focus{outline:none;border-color:var(--gold-dim);}
+  .pl-row-total{
+    border-top:1px solid var(--line-strong);margin-top:2px;padding-top:8px;font-weight:600;
+  }
+  .pl-row-total .pl-row-label{color:var(--text);}
+  .pl-row-total .pl-row-amount{color:var(--text);}
 
   .mini-chart-section{margin-bottom:28px;}
   .mini-chart-section .ledger-head{margin-bottom:2px;}
@@ -791,7 +806,7 @@
   <button class="nav-btn active" id="navTransactions" data-tab="tabTransactions">Transactions</button>
   <button class="nav-btn" id="navPL" data-tab="tabPL">P&amp;L</button>
   <button class="nav-btn" id="navNetWorth" data-tab="tabNetWorth">Treasury</button>
-  <button class="nav-btn" id="navDividends" data-tab="tabDividends">Dividends</button>
+  <button class="nav-btn" id="navDividends" data-tab="tabDividends" style="display:none;">Dividends</button>
   <button class="nav-btn" id="navVisualization" data-tab="tabVisualization">Visualization</button>
   <button class="nav-btn" id="navInvestment" data-tab="tabInvestment">Investment</button>
 </nav>
@@ -914,6 +929,7 @@ let accounts = [];
 let snapshots = [];
 let transactions = [];
 let dividends = [];
+let budgets = [];
 
 async function loadData(){
   try{
@@ -932,6 +948,10 @@ async function loadData(){
     const dv = localStorage.getItem('ledger_dividends');
     dividends = dv ? JSON.parse(dv) : [];
   }catch(e){ dividends = []; }
+  try{
+    const bg = localStorage.getItem('ledger_budgets');
+    budgets = bg ? JSON.parse(bg) : [];
+  }catch(e){ budgets = []; }
   render();
 }
 
@@ -950,6 +970,25 @@ async function saveTransactions(){
 async function saveDividends(){
   try{ localStorage.setItem('ledger_dividends', JSON.stringify(dividends)); }
   catch(e){ console.error('save dividends failed', e); }
+}
+async function saveBudgets(){
+  try{ localStorage.setItem('ledger_budgets', JSON.stringify(budgets)); }
+  catch(e){ console.error('save budgets failed', e); }
+}
+
+function getBudget(month, category){
+  const b = budgets.find(x=>x.month===month && x.category===category);
+  return b ? b.amount : null;
+}
+async function setBudget(month, category, amount){
+  const idx = budgets.findIndex(x=>x.month===month && x.category===category);
+  if(amount===null){
+    if(idx>-1) budgets.splice(idx,1);
+  } else {
+    if(idx>-1){ budgets[idx].amount = amount; }
+    else { budgets.push({ month, category, amount }); }
+  }
+  await saveBudgets();
 }
 
 function totals(){
@@ -1123,34 +1162,76 @@ function renderPL(){
   const container = document.getElementById('plReport');
   container.innerHTML = '';
 
+  const headerEl = document.createElement('div');
+  headerEl.className = 'pl-header-row';
+  headerEl.innerHTML = `
+    <span class="pl-col-cat">Category</span>
+    <span class="pl-col-num">Actual</span>
+    <span class="pl-col-num">Budget</span>
+    <span class="pl-col-num">Diff</span>
+  `;
+  container.appendChild(headerEl);
+
   PL_GROUP_ORDER.forEach(groupName=>{
+    const isIncomeGroup = groupName === 'A Einnahmen';
     const categoriesInGroup = Object.keys(CATEGORY_GROUPS).filter(c=> CATEGORY_GROUPS[c] === groupName);
-    let groupTotal = 0;
+
+    let groupSigned = 0, groupActual = 0, groupBudget = 0, groupDiff = 0;
+
     const rowsHtml = categoriesInGroup.map(cat=>{
       const catTx = monthTx.filter(t=>t.category===cat);
-      const sum = catTx.reduce((s,t)=> s + (t.type==='income' ? t.amount : -t.amount), 0);
-      groupTotal += sum;
-      return { cat, sum };
-    }).map(({cat,sum})=>{
-      const isZero = Math.abs(sum) < 0.005;
-      return `<div class="pl-row ${isZero?'zero':''}">
+      const signed = catTx.reduce((s,t)=> s + (t.type==='income' ? t.amount : -t.amount), 0);
+      const actual = catTx.reduce((s,t)=> s + Number(t.amount||0), 0);
+      const budgetVal = getBudget(selectedMonth, cat);
+      const budgetNum = budgetVal===null ? 0 : budgetVal;
+      const diff = actual - budgetNum;
+
+      groupSigned += signed;
+      groupActual += actual;
+      groupBudget += budgetNum;
+      groupDiff += diff;
+
+      const diffGood = isIncomeGroup ? diff >= 0 : diff <= 0;
+      const diffClass = Math.abs(diff) < 0.005 ? '' : (diffGood ? 'diff-good' : 'diff-bad');
+
+      return `<div class="pl-row">
         <span class="pl-row-label">${escapeHtml(cat)}</span>
-        <span class="pl-row-amount">${fmtEuro(sum)}</span>
+        <span class="pl-row-amount">${fmtPlain(actual)}</span>
+        <input type="number" class="pl-budget-input" data-category="${escapeHtml(cat)}" inputmode="decimal" step="0.01" value="${budgetVal===null?'':budgetVal}" placeholder="0,00" />
+        <span class="pl-row-amount ${diffClass}">${fmtPlain(diff)}</span>
       </div>`;
     }).join('');
 
-    grandTotal += groupTotal;
+    grandTotal += groupSigned;
+
+    const groupDiffGood = isIncomeGroup ? groupDiff >= 0 : groupDiff <= 0;
+    const groupDiffClass = Math.abs(groupDiff) < 0.005 ? '' : (groupDiffGood ? 'diff-good' : 'diff-bad');
 
     const groupEl = document.createElement('div');
     groupEl.className = 'pl-group';
     groupEl.innerHTML = `
       <div class="pl-group-head">
         <h3 class="pl-group-title">${groupName}</h3>
-        <div class="pl-group-total ${groupTotal>0?'positive':(groupTotal<0?'negative':'')}">${fmtEuro(groupTotal)}</div>
       </div>
       ${rowsHtml}
+      <div class="pl-row pl-row-total">
+        <span class="pl-row-label">Total</span>
+        <span class="pl-row-amount">${fmtPlain(groupActual)}</span>
+        <span class="pl-row-amount">${fmtPlain(groupBudget)}</span>
+        <span class="pl-row-amount ${groupDiffClass}">${fmtPlain(groupDiff)}</span>
+      </div>
     `;
     container.appendChild(groupEl);
+  });
+
+  container.querySelectorAll('.pl-budget-input').forEach(inp=>{
+    inp.addEventListener('change', async (e)=>{
+      const cat = e.target.dataset.category;
+      const raw = e.target.value.trim();
+      const amount = raw==='' ? null : (Number(raw)||0);
+      await setBudget(selectedMonth, cat, amount);
+      renderPL();
+    });
   });
 
   const resultEl = document.getElementById('plResultFigure');
