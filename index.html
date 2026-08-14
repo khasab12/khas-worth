@@ -80,65 +80,65 @@
   .hist-title{margin-top:4px;}
 
   /* Ledger sections */
-  .ledger{margin-bottom:28px;}
+  .ledger{margin-bottom:20px;}
   .ledger-head{
     display:flex;justify-content:space-between;align-items:baseline;
-    margin-bottom:2px;flex-wrap:wrap;gap:8px 0;
+    margin-bottom:2px;flex-wrap:wrap;gap:4px 0;
   }
   .ledger-head h2{
-    font-family:'Fraunces', serif;font-weight:500;font-size:17px;margin:0;
+    font-family:'Fraunces', serif;font-weight:500;font-size:15px;margin:0;
   }
-  .ledger.assets .ledger-head h2::before{content:'';display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--gold);margin-right:8px;vertical-align:middle;}
-  .ledger.liabilities .ledger-head h2::before{content:'';display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--burgundy);margin-right:8px;vertical-align:middle;}
+  .ledger.assets .ledger-head h2::before{content:'';display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--gold);margin-right:6px;vertical-align:middle;}
+  .ledger.liabilities .ledger-head h2::before{content:'';display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--burgundy);margin-right:6px;vertical-align:middle;}
   .ledger-head .total{
-    font-family:'IBM Plex Mono', monospace;font-size:14.5px;font-variant-numeric:tabular-nums;
+    font-family:'IBM Plex Mono', monospace;font-size:12.5px;font-variant-numeric:tabular-nums;
   }
   .ledger.assets .ledger-head .total{color:var(--gold);}
   .ledger.liabilities .ledger-head .total{color:var(--burgundy);}
 
-  .cat-group{margin-top:16px;}
-  .cat-group:first-child{margin-top:10px;}
+  .cat-group{margin-top:8px;}
+  .cat-group:first-child{margin-top:6px;}
   .cat-group-head{
     display:flex;justify-content:space-between;align-items:baseline;
-    padding:0 0 4px;
+    padding:0 0 2px;
   }
   .cat-group-name{
-    font-family:'IBM Plex Mono', monospace;font-size:10.5px;color:var(--text-muted);
-    text-transform:uppercase;letter-spacing:0.07em;
+    font-family:'IBM Plex Mono', monospace;font-size:9px;color:var(--text-muted);
+    text-transform:uppercase;letter-spacing:0.06em;
   }
   .cat-group-total{
-    font-family:'IBM Plex Mono', monospace;font-size:11.5px;color:var(--text-muted);
+    font-family:'IBM Plex Mono', monospace;font-size:10px;color:var(--text-muted);
     font-variant-numeric:tabular-nums;
   }
   .cat-group .rows{margin-top:0;}
 
-  .rows{margin-top:10px;padding-left:15px;border-left:1px solid var(--line);}
+  .rows{margin-top:6px;padding-left:12px;border-left:1px solid var(--line);}
   .row{
     display:flex;align-items:center;justify-content:space-between;
-    padding:12px 0;border-bottom:1px solid var(--line);
-    gap:10px;
+    padding:5px 0;border-bottom:1px solid var(--line);
+    gap:8px;
   }
   .row .meta{min-width:0;flex:1;}
   .row .name-btn{
     background:none;border:none;padding:0;margin:0;text-align:left;cursor:pointer;
     display:block;width:100%;
   }
-  .row .name-btn .name{font-size:14.5px;font-weight:500;color:var(--text);}
+  .row .name-btn .name{font-size:12.5px;font-weight:500;color:var(--text);}
   .row .name-btn:hover .name{color:var(--gold);}
-  .row .cat{font-family:'IBM Plex Mono', monospace;font-size:10.5px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.06em;margin-top:2px;}
-  .row .right{display:flex;align-items:center;gap:10px;flex-shrink:0;}
+  .row .cat{font-family:'IBM Plex Mono', monospace;font-size:9px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.05em;margin-top:1px;}
+  .row .right{display:flex;align-items:center;gap:6px;flex-shrink:0;}
   .row .balance{
-    font-family:'IBM Plex Mono', monospace;font-size:15px;font-variant-numeric:tabular-nums;
-    background:transparent;border:none;color:var(--text);text-align:right;width:104px;
-    border-bottom:1px solid transparent;padding:2px 0;
+    font-family:'IBM Plex Mono', monospace;font-size:12.5px;font-variant-numeric:tabular-nums;
+    background:transparent;border:none;color:var(--text);text-align:right;width:88px;
+    border-bottom:1px solid transparent;padding:1px 0;
   }
   .row .balance:focus{outline:none;border-bottom:1px solid var(--line-strong);}
   .row .balance-static{
-    font-family:'IBM Plex Mono', monospace;font-size:15px;font-variant-numeric:tabular-nums;color:var(--gold);
+    font-family:'IBM Plex Mono', monospace;font-size:12.5px;font-variant-numeric:tabular-nums;color:var(--gold);
   }
   .row .del{
-    background:none;border:none;color:var(--text-muted);font-size:16px;line-height:1;
-    padding:6px;cursor:pointer;
+    background:none;border:none;color:var(--text-muted);font-size:14px;line-height:1;
+    padding:4px;cursor:pointer;
   }
   .row .del:hover{color:var(--burgundy);}
   .row .del:focus-visible, .balance:focus-visible, button:focus-visible, select:focus-visible, input:focus-visible{
@@ -407,15 +407,21 @@
   }
 
   /* P&L tab */
-  .pl-settings-row{display:flex;justify-content:flex-end;margin-bottom:16px;}
-  .pl-top-figures{display:flex;gap:8px;}
-  .pl-top-figure{flex:1;min-width:0;}
-  .pl-top-figure .label{
-    margin-bottom:6px;font-size:9.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  .pl-top-row{
+    display:flex;align-items:center;gap:8px;
   }
-  .pl-top-value{
-    font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
-    letter-spacing:-0.01em;padding-bottom:8px;
+  .pl-month-select{flex:1 1 auto;min-width:0;}
+  .pl-mini-figure{
+    display:flex;flex-direction:column;min-width:0;flex-shrink:0;max-width:34%;
+  }
+  .pl-mini-figure.right{align-items:flex-end;}
+  .pl-mini-label{
+    font-family:'IBM Plex Mono', monospace;font-size:8px;letter-spacing:0.08em;
+    text-transform:uppercase;color:var(--text-muted);white-space:nowrap;
+  }
+  .pl-mini-value{
+    font-family:'Fraunces', serif;font-weight:500;font-size:14px;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--text);
   }
   .pl-header-row{
     display:grid;grid-template-columns:1fr 74px 74px 74px;gap:6px;
@@ -444,8 +450,8 @@
     font-family:'IBM Plex Mono', monospace;font-variant-numeric:tabular-nums;color:var(--text);
     text-align:right;font-size:10.5px;white-space:nowrap;overflow:hidden;
   }
-  .pl-row .pl-row-amount.diff-good{color:var(--gold);}
-  .pl-row .pl-row-amount.diff-bad{color:var(--burgundy);}
+  .pl-row .pl-row-amount.amt-green{color:var(--money-green);}
+  .pl-row .pl-row-amount.amt-red{color:var(--money-red);}
   .pl-budget-input{
     background:var(--ink-700);border:1px solid var(--line);color:var(--text);
     font-family:'IBM Plex Mono', monospace;font-size:10.5px;text-align:right;
@@ -645,17 +651,15 @@
   <div class="tab-panel" id="tabPL" style="display:none;">
 
     <section class="hero">
-      <div class="pl-settings-row">
-        <input type="month" id="plMonthSelect" class="year-select" />
-      </div>
-      <div class="pl-top-figures">
-        <div class="pl-top-figure">
-          <div class="label">Actual Total</div>
-          <div class="figure pl-top-value" id="plResultFigure">0,00 €</div>
+      <div class="pl-top-row">
+        <div class="pl-mini-figure" id="plResultWrap">
+          <span class="pl-mini-label">Actual</span>
+          <span class="pl-mini-value" id="plResultFigure">0,00 €</span>
         </div>
-        <div class="pl-top-figure">
-          <div class="label">Act vs Bud Total</div>
-          <div class="figure pl-top-value" id="plDiffFigure">0,00 €</div>
+        <input type="month" id="plMonthSelect" class="year-select pl-month-select" />
+        <div class="pl-mini-figure right" id="plDiffWrap">
+          <span class="pl-mini-label">Diff</span>
+          <span class="pl-mini-value" id="plDiffFigure">0,00 €</span>
         </div>
       </div>
     </section>
@@ -1265,6 +1269,10 @@ const CATEGORY_GROUPS = {
 };
 const PL_GROUP_ORDER = ['A Einnahmen','B Fixe Kosten','C Notwendige Kosten','D Variable Kosten','E Urlaub','F Investitionen'];
 
+function amtColorClass(n){
+  return Math.abs(n) < 0.005 ? '' : (n > 0 ? 'amt-green' : 'amt-red');
+}
+
 function renderPL(){
   const monthInput = document.getElementById('plMonthSelect');
   if(!monthInput.value){
@@ -1276,6 +1284,7 @@ function renderPL(){
   const monthTx = transactions.filter(t=> t.date.slice(0,7) === selectedMonth && t.category !== 'Umbuchung');
 
   let grandActual = 0, grandBudget = 0, grandDiff = 0;
+  let grandActualI = 0, grandBudgetI = 0, grandDiffI = 0;
   const container = document.getElementById('plReport');
   container.innerHTML = '';
 
@@ -1290,7 +1299,6 @@ function renderPL(){
   container.appendChild(headerEl);
 
   PL_GROUP_ORDER.forEach(groupName=>{
-    const isIncomeGroup = groupName === 'A Einnahmen';
     const categoriesInGroup = Object.keys(CATEGORY_GROUPS).filter(c=> CATEGORY_GROUPS[c] === groupName);
 
     let groupActual = 0, groupBudget = 0, groupDiff = 0;
@@ -1306,23 +1314,22 @@ function renderPL(){
       groupBudget += budgetNum;
       groupDiff += diff;
 
-      const diffGood = isIncomeGroup ? diff >= 0 : diff <= 0;
-      const diffClass = Math.abs(diff) < 0.005 ? '' : (diffGood ? 'diff-good' : 'diff-bad');
-
       return `<div class="pl-row">
         <span class="pl-row-label">${escapeHtml(cat)}</span>
         <span class="pl-row-amount">${fmtPlain(actual)}</span>
         <input type="number" class="pl-budget-input" data-category="${escapeHtml(cat)}" inputmode="decimal" step="0.01" value="${budgetVal===null?'':budgetVal}" placeholder="0,00" />
-        <span class="pl-row-amount ${diffClass}">${fmtPlain(diff)}</span>
+        <span class="pl-row-amount ${amtColorClass(diff)}">${fmtPlain(diff)}</span>
       </div>`;
     }).join('');
 
     grandActual += groupActual;
     grandBudget += groupBudget;
     grandDiff += groupDiff;
-
-    const groupDiffGood = isIncomeGroup ? groupDiff >= 0 : groupDiff <= 0;
-    const groupDiffClass = Math.abs(groupDiff) < 0.005 ? '' : (groupDiffGood ? 'diff-good' : 'diff-bad');
+    if(groupName !== 'F Investitionen'){
+      grandActualI += groupActual;
+      grandBudgetI += groupBudget;
+      grandDiffI += groupDiff;
+    }
 
     const groupEl = document.createElement('div');
     groupEl.className = 'pl-group';
@@ -1335,21 +1342,34 @@ function renderPL(){
         <span class="pl-row-label">Total</span>
         <span class="pl-row-amount">${fmtPlain(groupActual)}</span>
         <span class="pl-row-amount">${fmtPlain(groupBudget)}</span>
-        <span class="pl-row-amount ${groupDiffClass}">${fmtPlain(groupDiff)}</span>
+        <span class="pl-row-amount ${amtColorClass(groupDiff)}">${fmtPlain(groupDiff)}</span>
       </div>
     `;
     container.appendChild(groupEl);
+
+    if(groupName === 'E Urlaub'){
+      const grandElI = document.createElement('div');
+      grandElI.className = 'pl-group pl-grand-total';
+      grandElI.innerHTML = `
+        <div class="pl-row pl-row-total">
+          <span class="pl-row-label">Grand Total I</span>
+          <span class="pl-row-amount ${amtColorClass(grandActualI)}">${fmtPlain(grandActualI)}</span>
+          <span class="pl-row-amount ${amtColorClass(grandBudgetI)}">${fmtPlain(grandBudgetI)}</span>
+          <span class="pl-row-amount ${amtColorClass(grandDiffI)}">${fmtPlain(grandDiffI)}</span>
+        </div>
+      `;
+      container.appendChild(grandElI);
+    }
   });
 
-  const grandDiffClass = Math.abs(grandDiff) < 0.005 ? '' : (grandDiff <= 0 ? 'diff-good' : 'diff-bad');
   const grandEl = document.createElement('div');
   grandEl.className = 'pl-group pl-grand-total';
   grandEl.innerHTML = `
     <div class="pl-row pl-row-total">
-      <span class="pl-row-label">Grand Total</span>
-      <span class="pl-row-amount">${fmtPlain(grandActual)}</span>
-      <span class="pl-row-amount">${fmtPlain(grandBudget)}</span>
-      <span class="pl-row-amount ${grandDiffClass}">${fmtPlain(grandDiff)}</span>
+      <span class="pl-row-label">Grand Total II</span>
+      <span class="pl-row-amount ${amtColorClass(grandActual)}">${fmtPlain(grandActual)}</span>
+      <span class="pl-row-amount ${amtColorClass(grandBudget)}">${fmtPlain(grandBudget)}</span>
+      <span class="pl-row-amount ${amtColorClass(grandDiff)}">${fmtPlain(grandDiff)}</span>
     </div>
   `;
   container.appendChild(grandEl);
