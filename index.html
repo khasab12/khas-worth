@@ -26,6 +26,8 @@
     --text:#EDE6D6;
     --text-muted:#8F96A3;
     --radius:10px;
+    --money-green:#5FB37B;
+    --money-red:#D9695F;
   }
   *{box-sizing:border-box;}
   html,body{margin:0;padding:0;}
@@ -408,9 +410,8 @@
     font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
     letter-spacing:-0.01em;padding-bottom:8px;
   }
-  .pl-top-figure:first-child .pl-top-value{color:var(--gold);}
   .pl-header-row{
-    display:grid;grid-template-columns:1fr 58px 62px 58px;gap:6px;
+    display:grid;grid-template-columns:65% 1fr 1fr 1fr;gap:6px;
     padding:0 2px 8px;font-family:'IBM Plex Mono', monospace;font-size:9px;
     text-transform:uppercase;letter-spacing:0.05em;color:var(--text-muted);
   }
@@ -426,7 +427,7 @@
     font-family:'Fraunces', serif;font-weight:500;font-size:14px;margin:0;color:var(--text);
   }
   .pl-row{
-    display:grid;grid-template-columns:1fr 58px 62px 58px;gap:6px;align-items:center;
+    display:grid;grid-template-columns:65% 1fr 1fr 1fr;gap:6px;align-items:center;
     padding:6px 0;font-size:12px;color:var(--text-muted);
   }
   .pl-row .pl-row-label{
@@ -434,14 +435,14 @@
   }
   .pl-row .pl-row-amount{
     font-family:'IBM Plex Mono', monospace;font-variant-numeric:tabular-nums;color:var(--text);
-    text-align:right;
+    text-align:right;font-size:12.5px;
   }
   .pl-row .pl-row-amount.diff-good{color:var(--gold);}
   .pl-row .pl-row-amount.diff-bad{color:var(--burgundy);}
   .pl-budget-input{
     background:var(--ink-700);border:1px solid var(--line);color:var(--text);
-    font-family:'IBM Plex Mono', monospace;font-size:11px;text-align:right;
-    padding:4px 5px;border-radius:5px;width:100%;min-width:0;
+    font-family:'IBM Plex Mono', monospace;font-size:12px;text-align:right;
+    padding:4px 6px;border-radius:5px;width:100%;min-width:0;
   }
   .pl-budget-input:focus{outline:none;border-color:var(--gold-dim);}
   .pl-row-total{
@@ -453,6 +454,7 @@
     border-color:var(--gold-dim);background:var(--ink-700);
   }
   .pl-grand-total .pl-row-label{font-family:'Fraunces', serif;font-size:14px;}
+  .pl-budget-actions{display:flex;gap:8px;justify-content:center;margin-top:6px;margin-bottom:34px;}
 
   .mini-chart-section{margin-bottom:28px;}
   .mini-chart-section .ledger-head{margin-bottom:2px;}
@@ -651,6 +653,12 @@
     </section>
 
     <div id="plReport"></div>
+
+    <div class="pl-budget-actions">
+      <button class="export-btn" id="budgetExportBtn">Export Budget</button>
+      <button class="export-btn" id="budgetImportBtn">Import Budget</button>
+    </div>
+    <input type="file" id="budgetCsvFileInput" accept=".csv,text/csv" style="display:none" />
 
   </div>
 
@@ -1346,10 +1354,13 @@ function renderPL(){
     });
   });
 
-  document.getElementById('plResultFigure').textContent = fmtEuro(grandActual);
+  const resultEl = document.getElementById('plResultFigure');
+  resultEl.textContent = fmtEuro(grandActual);
+  resultEl.style.color = grandActual > 0 ? 'var(--money-green)' : (grandActual < 0 ? 'var(--money-red)' : '');
+
   const diffEl = document.getElementById('plDiffFigure');
   diffEl.textContent = fmtEuro(grandDiff);
-  diffEl.style.color = grandDiff > 0 ? 'var(--burgundy)' : (grandDiff < 0 ? 'var(--gold)' : '');
+  diffEl.style.color = grandDiff > 0 ? 'var(--money-green)' : (grandDiff < 0 ? 'var(--money-red)' : '');
 }
 
 function renderDividends(){
@@ -2750,6 +2761,83 @@ document.getElementById('txModalDeleteBtn').addEventListener('click', async ()=>
   closeTxModal();
   renderTransactions();
   renderPL();
+});
+
+document.getElementById('budgetExportBtn').addEventListener('click', ()=>{
+  const monthInput = document.getElementById('plMonthSelect');
+  const selectedMonth = monthInput.value || new Date().toISOString().slice(0,7);
+  const allCategories = Object.keys(CATEGORY_GROUPS);
+  const header = ['Category','Budget'];
+  const rows = allCategories.map(cat=>{
+    const val = getBudget(selectedMonth, cat);
+    return [cat, val===null ? '' : val.toFixed(2)].map(csvField).join(',');
+  });
+  const csv = [header.map(csvField).join(','), ...rows].join('\n');
+  const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `budget-${selectedMonth}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+});
+
+document.getElementById('budgetImportBtn').addEventListener('click', ()=>{
+  document.getElementById('budgetCsvFileInput').click();
+});
+document.getElementById('budgetCsvFileInput').addEventListener('change', (e)=>{
+  const file = e.target.files[0];
+  if(!file) return;
+  const monthInput = document.getElementById('plMonthSelect');
+  const selectedMonth = monthInput.value || new Date().toISOString().slice(0,7);
+
+  const reader = new FileReader();
+  reader.onload = async (evt)=>{
+    try{
+      const text = evt.target.result;
+      const lines = text.split(/\r?\n/).map(l=>l.trim()).filter(l=>l.length>0);
+      if(lines.length < 2){ alert('CSV has no data rows.'); e.target.value=''; return; }
+
+      const headerCells = parseCsvLine(lines[0]);
+      const norm = (s)=> s.toLowerCase().replace(/[^a-z]/g,'');
+      const headerLooksValid = headerCells.some(h=> norm(h)==='category') && headerCells.some(h=> norm(h)==='budget');
+      const dataLines = headerLooksValid ? lines.slice(1) : lines;
+
+      let catIdx=0, budgetIdx=1;
+      if(headerLooksValid){
+        headerCells.forEach((h,i)=>{
+          const n = norm(h);
+          if(n==='category') catIdx=i;
+          else if(n==='budget') budgetIdx=i;
+        });
+      }
+
+      const dLabel = new Date(selectedMonth+'-01T12:00:00').toLocaleDateString('de-DE', {month:'long', year:'numeric'});
+      if(!confirm(`Import budgets for ${dLabel}? This will overwrite existing budget values for that month.`)){ e.target.value=''; return; }
+
+      let imported = 0, skipped = 0;
+      dataLines.forEach(line=>{
+        const parts = parseCsvLine(line);
+        if(parts.length <= Math.max(catIdx,budgetIdx)){ skipped++; return; }
+        const cat = parts[catIdx];
+        if(!Object.keys(CATEGORY_GROUPS).includes(cat)){ skipped++; return; }
+        const raw = parts[budgetIdx].trim();
+        const amount = raw==='' ? null : (Number(raw)||0);
+        setBudget(selectedMonth, cat, amount);
+        imported++;
+      });
+      await saveBudgets();
+      renderPL();
+      alert(`Imported ${imported} budget value${imported===1?'':'s'} for ${dLabel}.` + (skipped>0 ? ` Skipped ${skipped} row${skipped===1?'':'s'}.` : ''));
+    }catch(err){
+      console.error(err);
+      alert('Could not read that CSV file. Expected columns: Category, Budget.');
+    }
+    e.target.value = '';
+  };
+  reader.readAsText(file);
 });
 
 loadData();
