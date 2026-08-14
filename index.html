@@ -548,15 +548,15 @@
     <section class="tx-summary">
       <div class="tx-summary-item">
         <div class="tx-summary-label">Income</div>
-        <div class="tx-summary-value income" id="txIncomeTotal">0,00 €</div>
+        <div class="tx-summary-value income" id="txIncomeTotal">0,00</div>
       </div>
       <div class="tx-summary-item">
         <div class="tx-summary-label">Expenses</div>
-        <div class="tx-summary-value expense" id="txExpenseTotal">0,00 €</div>
+        <div class="tx-summary-value expense" id="txExpenseTotal">0,00</div>
       </div>
       <div class="tx-summary-item">
         <div class="tx-summary-label">Net</div>
-        <div class="tx-summary-value" id="txNetTotal">0,00 €</div>
+        <div class="tx-summary-value" id="txNetTotal">0,00</div>
       </div>
     </section>
 
@@ -652,14 +652,14 @@
 
     <section class="hero">
       <div class="pl-top-row">
+        <input type="month" id="plMonthSelect" class="year-select pl-month-select" />
         <div class="pl-mini-figure" id="plResultWrap">
           <span class="pl-mini-label">Actual</span>
-          <span class="pl-mini-value" id="plResultFigure">0,00 €</span>
+          <span class="pl-mini-value" id="plResultFigure">0,00</span>
         </div>
-        <input type="month" id="plMonthSelect" class="year-select pl-month-select" />
         <div class="pl-mini-figure right" id="plDiffWrap">
           <span class="pl-mini-label">Diff</span>
-          <span class="pl-mini-value" id="plDiffFigure">0,00 €</span>
+          <span class="pl-mini-value" id="plDiffFigure">0,00</span>
         </div>
       </div>
     </section>
@@ -1184,9 +1184,9 @@ function renderTransactions(){
 
   const income = filteredTx.filter(t=>t.type==='income' && t.category!=='Umbuchung').reduce((s,t)=>s+Number(t.amount||0),0);
   const expense = filteredTx.filter(t=>t.type==='expense' && t.category!=='Umbuchung').reduce((s,t)=>s+Number(t.amount||0),0);
-  document.getElementById('txIncomeTotal').textContent = fmtEuro(income);
-  document.getElementById('txExpenseTotal').textContent = fmtEuro(expense);
-  document.getElementById('txNetTotal').textContent = fmtEuro(income - expense);
+  document.getElementById('txIncomeTotal').textContent = fmtPlain(income);
+  document.getElementById('txExpenseTotal').textContent = fmtPlain(expense);
+  document.getElementById('txNetTotal').textContent = fmtPlain(income - expense);
 
   const container = document.getElementById('txRows');
   if(transactions.length===0){
@@ -1352,7 +1352,7 @@ function renderPL(){
       grandElI.className = 'pl-group pl-grand-total';
       grandElI.innerHTML = `
         <div class="pl-row pl-row-total">
-          <span class="pl-row-label">Grand Total I</span>
+          <span class="pl-row-label">Total I</span>
           <span class="pl-row-amount ${amtColorClass(grandActualI)}">${fmtPlain(grandActualI)}</span>
           <span class="pl-row-amount ${amtColorClass(grandBudgetI)}">${fmtPlain(grandBudgetI)}</span>
           <span class="pl-row-amount ${amtColorClass(grandDiffI)}">${fmtPlain(grandDiffI)}</span>
@@ -1366,7 +1366,7 @@ function renderPL(){
   grandEl.className = 'pl-group pl-grand-total';
   grandEl.innerHTML = `
     <div class="pl-row pl-row-total">
-      <span class="pl-row-label">Grand Total II</span>
+      <span class="pl-row-label">Total II</span>
       <span class="pl-row-amount ${amtColorClass(grandActual)}">${fmtPlain(grandActual)}</span>
       <span class="pl-row-amount ${amtColorClass(grandBudget)}">${fmtPlain(grandBudget)}</span>
       <span class="pl-row-amount ${amtColorClass(grandDiff)}">${fmtPlain(grandDiff)}</span>
@@ -1385,11 +1385,11 @@ function renderPL(){
   });
 
   const resultEl = document.getElementById('plResultFigure');
-  resultEl.textContent = fmtEuro(grandActual);
+  resultEl.textContent = fmtPlain(grandActual);
   resultEl.style.color = grandActual > 0 ? 'var(--money-green)' : (grandActual < 0 ? 'var(--money-red)' : '');
 
   const diffEl = document.getElementById('plDiffFigure');
-  diffEl.textContent = fmtEuro(grandDiff);
+  diffEl.textContent = fmtPlain(grandDiff);
   diffEl.style.color = grandDiff > 0 ? 'var(--money-green)' : (grandDiff < 0 ? 'var(--money-red)' : '');
 }
 
