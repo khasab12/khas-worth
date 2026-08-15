@@ -432,6 +432,7 @@
     font-family:'Fraunces', serif;font-weight:500;font-size:14px;
     white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--text);
   }
+  #plTopTotals{margin-top:18px;}
   .pl-budget-hint{
     font-size:11px;color:var(--text-muted);line-height:1.5;margin:0 0 18px;
   }
@@ -679,6 +680,8 @@
         </div>
       </div>
     </section>
+
+    <div id="plTopTotals"></div>
 
     <p class="pl-budget-hint">Enter budget amounts as positive numbers — income (A) is treated as +, all other categories (B–F) as −, automatically.</p>
 
@@ -1322,20 +1325,10 @@ function renderPL(){
 
   const monthTx = transactions.filter(t=> t.date.slice(0,7) === selectedMonth && t.category !== 'Umbuchung');
 
+  // --- Pass 1: compute everything first ---
   let grandActual = 0, grandBudget = 0, grandDiff = 0;
   let grandActualI = 0, grandBudgetI = 0, grandDiffI = 0;
-  const container = document.getElementById('plReport');
-  container.innerHTML = '';
-
-  const headerEl = document.createElement('div');
-  headerEl.className = 'pl-header-row';
-  headerEl.innerHTML = `
-    <span class="pl-col-cat">Category</span>
-    <span class="pl-col-num">Actual</span>
-    <span class="pl-col-num">Budget</span>
-    <span class="pl-col-num">Diff</span>
-  `;
-  container.appendChild(headerEl);
+  const groupResults = [];
 
   PL_GROUP_ORDER.forEach(groupName=>{
     const isIncomeGroup = groupName === 'A Einnahmen';
@@ -1371,6 +1364,44 @@ function renderPL(){
       grandDiffI += groupDiff;
     }
 
+    groupResults.push({ groupName, rowsHtml, groupActual, groupBudget, groupDiff });
+  });
+
+  // --- Pass 2: render ---
+  const totalRowHtml = (label, actual, budget, diff)=> `
+    <div class="pl-row pl-row-total">
+      <span class="pl-row-label">${label}</span>
+      <span class="pl-row-amount ${amtColorClass(actual)}">${fmtPlain(actual)}</span>
+      <span class="pl-row-amount ${amtColorClass(budget)}">${fmtPlain(budget)}</span>
+      <span class="pl-row-amount ${amtColorClass(diff)}">${fmtPlain(diff)}</span>
+    </div>
+  `;
+
+  const topTotals = document.getElementById('plTopTotals');
+  topTotals.innerHTML = `
+    <div class="pl-group pl-grand-total">
+      <div class="pl-group-head">
+        <h3 class="pl-group-title">Totals</h3>
+      </div>
+      ${totalRowHtml('Total I', grandActualI, grandBudgetI, grandDiffI)}
+      ${totalRowHtml('Total II', grandActual, grandBudget, grandDiff)}
+    </div>
+  `;
+
+  const container = document.getElementById('plReport');
+  container.innerHTML = '';
+
+  const headerEl = document.createElement('div');
+  headerEl.className = 'pl-header-row';
+  headerEl.innerHTML = `
+    <span class="pl-col-cat">Category</span>
+    <span class="pl-col-num">Actual</span>
+    <span class="pl-col-num">Budget</span>
+    <span class="pl-col-num">Diff</span>
+  `;
+  container.appendChild(headerEl);
+
+  groupResults.forEach(({groupName, rowsHtml, groupActual, groupBudget, groupDiff})=>{
     const groupEl = document.createElement('div');
     groupEl.className = 'pl-group';
     groupEl.innerHTML = `
@@ -1386,28 +1417,20 @@ function renderPL(){
       </div>
     `;
     container.appendChild(groupEl);
-  });
 
-  const totalsEl = document.createElement('div');
-  totalsEl.className = 'pl-group pl-grand-total';
-  totalsEl.innerHTML = `
-    <div class="pl-group-head">
-      <h3 class="pl-group-title">Totals</h3>
-    </div>
-    <div class="pl-row pl-row-total">
-      <span class="pl-row-label">Total I</span>
-      <span class="pl-row-amount ${amtColorClass(grandActualI)}">${fmtPlain(grandActualI)}</span>
-      <span class="pl-row-amount ${amtColorClass(grandBudgetI)}">${fmtPlain(grandBudgetI)}</span>
-      <span class="pl-row-amount ${amtColorClass(grandDiffI)}">${fmtPlain(grandDiffI)}</span>
-    </div>
-    <div class="pl-row pl-row-total">
-      <span class="pl-row-label">Total II</span>
-      <span class="pl-row-amount ${amtColorClass(grandActual)}">${fmtPlain(grandActual)}</span>
-      <span class="pl-row-amount ${amtColorClass(grandBudget)}">${fmtPlain(grandBudget)}</span>
-      <span class="pl-row-amount ${amtColorClass(grandDiff)}">${fmtPlain(grandDiff)}</span>
-    </div>
-  `;
-  container.appendChild(totalsEl);
+    if(groupName === 'E Urlaub'){
+      const totalIEl = document.createElement('div');
+      totalIEl.className = 'pl-group pl-grand-total';
+      totalIEl.innerHTML = totalRowHtml('Total I', grandActualI, grandBudgetI, grandDiffI);
+      container.appendChild(totalIEl);
+    }
+    if(groupName === 'F Investitionen'){
+      const totalIIEl = document.createElement('div');
+      totalIIEl.className = 'pl-group pl-grand-total';
+      totalIIEl.innerHTML = totalRowHtml('Total II', grandActual, grandBudget, grandDiff);
+      container.appendChild(totalIIEl);
+    }
+  });
 
   container.querySelectorAll('.pl-budget-input').forEach(inp=>{
     inp.addEventListener('change', async (e)=>{
