@@ -408,11 +408,20 @@
 
   /* P&L tab */
   .pl-top-row{
-    display:flex;align-items:center;gap:8px;
+    display:flex;align-items:center;gap:8px;margin-bottom:12px;
   }
-  .pl-month-select{flex:1 1 auto;min-width:0;}
+  .pl-month-select{flex:1 1 auto;min-width:0;text-align:center;}
+  .pl-month-nav{
+    background:var(--ink-700);border:1px solid var(--line-strong);color:var(--text);
+    font-size:15px;line-height:1;padding:8px 12px;border-radius:8px;cursor:pointer;
+    flex-shrink:0;
+  }
+  .pl-month-nav:hover{border-color:var(--gold-dim);color:var(--gold);}
+  .pl-top-figures-row{
+    display:flex;justify-content:space-between;gap:8px;
+  }
   .pl-mini-figure{
-    display:flex;flex-direction:column;min-width:0;flex-shrink:0;max-width:34%;
+    display:flex;flex-direction:column;min-width:0;flex-shrink:0;max-width:48%;
   }
   .pl-mini-figure.right{align-items:flex-end;}
   .pl-mini-label{
@@ -422,6 +431,9 @@
   .pl-mini-value{
     font-family:'Fraunces', serif;font-weight:500;font-size:14px;
     white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--text);
+  }
+  .pl-budget-hint{
+    font-size:11px;color:var(--text-muted);line-height:1.5;margin:0 0 18px;
   }
   .pl-header-row{
     display:grid;grid-template-columns:1fr 74px 74px 74px;gap:6px;
@@ -533,7 +545,7 @@
     font-family:'Fraunces', serif;font-weight:500;font-size:14.5px;margin:20px 0 4px;
   }
   .tx-modal-form{margin:16px 0 20px;}
-  .tx-modal-delete{width:100%;}
+  .tx-modal-delete{width:100%;margin-top:18px;}
 </style>
 </head>
 <body>
@@ -652,7 +664,11 @@
 
     <section class="hero">
       <div class="pl-top-row">
+        <button type="button" class="pl-month-nav" id="plMonthPrev" aria-label="Previous month">←</button>
         <input type="month" id="plMonthSelect" class="year-select pl-month-select" />
+        <button type="button" class="pl-month-nav" id="plMonthNext" aria-label="Next month">→</button>
+      </div>
+      <div class="pl-top-figures-row">
         <div class="pl-mini-figure" id="plResultWrap">
           <span class="pl-mini-label">Actual</span>
           <span class="pl-mini-value" id="plResultFigure">0,00</span>
@@ -663,6 +679,8 @@
         </div>
       </div>
     </section>
+
+    <p class="pl-budget-hint">Enter budget amounts as positive numbers — income (A) is treated as +, all other categories (B–F) as −, automatically.</p>
 
     <div id="plReport"></div>
 
@@ -676,15 +694,17 @@
 
   <div class="tab-panel" id="tabNetWorth" style="display:none;">
 
-    <section class="hero">
-      <div class="label">Net Worth</div>
-      <div class="figure" id="netWorthFigure">0,00 €</div>
+    <section class="tx-summary">
+      <div class="tx-summary-item">
+        <div class="tx-summary-label">Net Worth</div>
+        <div class="tx-summary-value" id="netWorthFigure">0,00</div>
+      </div>
     </section>
 
     <section class="ledger assets">
       <div class="ledger-head">
         <h2>Assets</h2>
-        <div class="total" id="assetsTotal">0,00 €</div>
+        <div class="total" id="assetsTotal">0,00</div>
       </div>
       <div class="rows" id="assetsRows"></div>
       <div class="add-row">
@@ -712,7 +732,7 @@
     <section class="ledger liabilities">
       <div class="ledger-head">
         <h2>Liabilities</h2>
-        <div class="total" id="liabilitiesTotal">0,00 €</div>
+        <div class="total" id="liabilitiesTotal">0,00</div>
       </div>
       <div class="rows" id="liabilitiesRows"></div>
       <div class="add-row">
@@ -924,6 +944,8 @@
 
     <h3 class="modal-hist-title">Snapshot History</h3>
     <div class="hist-rows" id="modalHistRows"></div>
+
+    <button class="backup-btn restore tx-modal-delete" id="modalDeleteBtn">Delete Account</button>
   </div>
 </div>
 
@@ -1016,6 +1038,11 @@ const fmtPlain = (n) => {
   return (n < 0 ? '-' : '') + s;
 };
 const fmtAxis = (n) => Math.round(n).toString();
+const parseGermanNumber = (str) => {
+  if(!str) return 0;
+  const cleaned = str.trim().replace(/\./g,'').replace(',', '.').replace(/[^0-9.\-]/g,'');
+  return Number(cleaned) || 0;
+};
 
 let accounts = [];
 let snapshots = [];
@@ -1273,6 +1300,18 @@ function amtColorClass(n){
   return Math.abs(n) < 0.005 ? '' : (n > 0 ? 'amt-green' : 'amt-red');
 }
 
+function parseFlexibleNumber(str){
+  if(!str) return 0;
+  let s = str.trim().replace(',', '.');
+  const parts = s.split('.');
+  if(parts.length > 2){
+    const last = parts.pop();
+    s = parts.join('') + '.' + last;
+  }
+  s = s.replace(/[^0-9.\-]/g,'');
+  return Math.abs(Number(s)) || 0;
+}
+
 function renderPL(){
   const monthInput = document.getElementById('plMonthSelect');
   if(!monthInput.value){
@@ -1299,6 +1338,7 @@ function renderPL(){
   container.appendChild(headerEl);
 
   PL_GROUP_ORDER.forEach(groupName=>{
+    const isIncomeGroup = groupName === 'A Einnahmen';
     const categoriesInGroup = Object.keys(CATEGORY_GROUPS).filter(c=> CATEGORY_GROUPS[c] === groupName);
 
     let groupActual = 0, groupBudget = 0, groupDiff = 0;
@@ -1306,18 +1346,18 @@ function renderPL(){
     const rowsHtml = categoriesInGroup.map(cat=>{
       const catTx = monthTx.filter(t=>t.category===cat);
       const actual = catTx.reduce((s,t)=> s + (t.type==='income' ? Number(t.amount||0) : -Number(t.amount||0)), 0);
-      const budgetVal = getBudget(selectedMonth, cat);
-      const budgetNum = budgetVal===null ? 0 : budgetVal;
-      const diff = actual - budgetNum;
+      const budgetMag = getBudget(selectedMonth, cat); // stored as positive magnitude, or null
+      const budgetSigned = budgetMag===null ? 0 : (isIncomeGroup ? budgetMag : -budgetMag);
+      const diff = actual - budgetSigned;
 
       groupActual += actual;
-      groupBudget += budgetNum;
+      groupBudget += budgetSigned;
       groupDiff += diff;
 
       return `<div class="pl-row">
         <span class="pl-row-label">${escapeHtml(cat)}</span>
         <span class="pl-row-amount">${fmtPlain(actual)}</span>
-        <input type="number" class="pl-budget-input" data-category="${escapeHtml(cat)}" inputmode="decimal" step="0.01" value="${budgetVal===null?'':budgetVal}" placeholder="0,00" />
+        <input type="text" class="pl-budget-input" data-category="${escapeHtml(cat)}" inputmode="decimal" value="${budgetMag===null?'':fmtPlain(budgetMag)}" placeholder="0,00" />
         <span class="pl-row-amount ${amtColorClass(diff)}">${fmtPlain(diff)}</span>
       </div>`;
     }).join('');
@@ -1346,25 +1386,20 @@ function renderPL(){
       </div>
     `;
     container.appendChild(groupEl);
-
-    if(groupName === 'E Urlaub'){
-      const grandElI = document.createElement('div');
-      grandElI.className = 'pl-group pl-grand-total';
-      grandElI.innerHTML = `
-        <div class="pl-row pl-row-total">
-          <span class="pl-row-label">Total I</span>
-          <span class="pl-row-amount ${amtColorClass(grandActualI)}">${fmtPlain(grandActualI)}</span>
-          <span class="pl-row-amount ${amtColorClass(grandBudgetI)}">${fmtPlain(grandBudgetI)}</span>
-          <span class="pl-row-amount ${amtColorClass(grandDiffI)}">${fmtPlain(grandDiffI)}</span>
-        </div>
-      `;
-      container.appendChild(grandElI);
-    }
   });
 
-  const grandEl = document.createElement('div');
-  grandEl.className = 'pl-group pl-grand-total';
-  grandEl.innerHTML = `
+  const totalsEl = document.createElement('div');
+  totalsEl.className = 'pl-group pl-grand-total';
+  totalsEl.innerHTML = `
+    <div class="pl-group-head">
+      <h3 class="pl-group-title">Totals</h3>
+    </div>
+    <div class="pl-row pl-row-total">
+      <span class="pl-row-label">Total I</span>
+      <span class="pl-row-amount ${amtColorClass(grandActualI)}">${fmtPlain(grandActualI)}</span>
+      <span class="pl-row-amount ${amtColorClass(grandBudgetI)}">${fmtPlain(grandBudgetI)}</span>
+      <span class="pl-row-amount ${amtColorClass(grandDiffI)}">${fmtPlain(grandDiffI)}</span>
+    </div>
     <div class="pl-row pl-row-total">
       <span class="pl-row-label">Total II</span>
       <span class="pl-row-amount ${amtColorClass(grandActual)}">${fmtPlain(grandActual)}</span>
@@ -1372,13 +1407,13 @@ function renderPL(){
       <span class="pl-row-amount ${amtColorClass(grandDiff)}">${fmtPlain(grandDiff)}</span>
     </div>
   `;
-  container.appendChild(grandEl);
+  container.appendChild(totalsEl);
 
   container.querySelectorAll('.pl-budget-input').forEach(inp=>{
     inp.addEventListener('change', async (e)=>{
       const cat = e.target.dataset.category;
       const raw = e.target.value.trim();
-      const amount = raw==='' ? null : (Number(raw)||0);
+      const amount = raw==='' ? null : parseFlexibleNumber(raw);
       await setBudget(selectedMonth, cat, amount);
       renderPL();
     });
@@ -1472,7 +1507,7 @@ function renderRows(type, containerId){
     groupEl.innerHTML = `
       <div class="cat-group-head">
         <span class="cat-group-name">${escapeHtml(cat)}</span>
-        <span class="cat-group-total">${fmtEuro(subtotal)}</span>
+        <span class="cat-group-total">${fmtPlain(subtotal)}</span>
       </div>
       <div class="rows"></div>
     `;
@@ -1485,8 +1520,7 @@ function renderRows(type, containerId){
           <button class="name-btn" data-id="${acc.id}"><span class="name">${escapeHtml(acc.name)}</span></button>
         </div>
         <div class="right">
-          <input class="balance" type="number" inputmode="decimal" value="${acc.balance}" data-id="${acc.id}" />
-          <button class="del" data-id="${acc.id}" title="Delete" aria-label="Delete ${escapeHtml(acc.name)}">×</button>
+          <input class="balance" type="text" inputmode="decimal" value="${fmtPlain(acc.balance)}" data-id="${acc.id}" />
         </div>
       `;
       rowsContainer.appendChild(row);
@@ -1504,17 +1538,7 @@ function renderRows(type, containerId){
     inp.addEventListener('change', async (e)=>{
       const id = e.target.dataset.id;
       const acc = accounts.find(a=>a.id===id);
-      if(acc){ acc.balance = Number(e.target.value)||0; await saveAccounts(); render(); }
-    });
-  });
-  container.querySelectorAll('.del').forEach(btn=>{
-    btn.addEventListener('click', async (e)=>{
-      const id = e.target.dataset.id;
-      const acc = accounts.find(a=>a.id===id);
-      const label = acc ? acc.name : 'this entry';
-      if(!confirm(`Delete "${label}"? This can't be undone.`)) return;
-      accounts = accounts.filter(a=>a.id!==id);
-      await saveAccounts(); render();
+      if(acc){ acc.balance = parseGermanNumber(e.target.value); await saveAccounts(); render(); }
     });
   });
 }
@@ -1925,9 +1949,9 @@ function escapeHtml(str){
 
 function render(){
   const { assetsTotal, liabTotal, netWorth } = totals();
-  document.getElementById('netWorthFigure').textContent = fmtEuro(netWorth);
-  document.getElementById('assetsTotal').textContent = fmtEuro(assetsTotal);
-  document.getElementById('liabilitiesTotal').textContent = fmtEuro(liabTotal);
+  document.getElementById('netWorthFigure').textContent = fmtPlain(netWorth);
+  document.getElementById('assetsTotal').textContent = fmtPlain(assetsTotal);
+  document.getElementById('liabilitiesTotal').textContent = fmtPlain(liabTotal);
 
   renderRows('asset','assetsRows');
   renderRows('liability','liabilitiesRows');
@@ -2439,6 +2463,16 @@ document.getElementById('modalBalanceInput').addEventListener('change', async (e
   }
 });
 
+document.getElementById('modalDeleteBtn').addEventListener('click', async ()=>{
+  const acc = accounts.find(a=>a.id===currentModalAccountId);
+  if(!acc) return;
+  if(!confirm(`Delete "${acc.name}"? This can't be undone.`)) return;
+  accounts = accounts.filter(a=>a.id!==currentModalAccountId);
+  await saveAccounts();
+  closeAccountModal();
+  render();
+});
+
 document.getElementById('modalCategorySelect').addEventListener('change', async (e)=>{
   const acc = accounts.find(a=>a.id===currentModalAccountId);
   if(acc){
@@ -2466,6 +2500,17 @@ document.getElementById('txCategoryFilterSelect').addEventListener('change', ()=
 document.getElementById('txPeriodSelect').addEventListener('change', ()=>{ txCurrentPage = 1; renderTransactions(); });
 
 document.getElementById('plMonthSelect').addEventListener('change', renderPL);
+
+function shiftPLMonth(delta){
+  const monthInput = document.getElementById('plMonthSelect');
+  const current = monthInput.value || new Date().toISOString().slice(0,7);
+  const [y, m] = current.split('-').map(Number);
+  const d = new Date(y, (m-1) + delta, 1);
+  monthInput.value = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0');
+  renderPL();
+}
+document.getElementById('plMonthPrev').addEventListener('click', ()=> shiftPLMonth(-1));
+document.getElementById('plMonthNext').addEventListener('click', ()=> shiftPLMonth(1));
 
 document.querySelectorAll('#txSignToggle .sign-btn').forEach(btn=>{
   btn.addEventListener('click', ()=>{
@@ -2868,7 +2913,7 @@ document.getElementById('budgetCsvFileInput').addEventListener('change', (e)=>{
         const cat = parts[catIdx];
         if(!Object.keys(CATEGORY_GROUPS).includes(cat)){ skipped++; return; }
         const raw = parts[budgetIdx].trim();
-        const amount = raw==='' ? null : (Number(raw)||0);
+        const amount = raw==='' ? null : Math.abs(Number(raw)||0);
         setBudget(selectedMonth, cat, amount);
         imported++;
       });
