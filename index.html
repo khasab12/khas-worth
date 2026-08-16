@@ -484,6 +484,14 @@
   }
   .settings-group-name:focus{outline:none;border-bottom:1px solid var(--gold-dim);}
   .settings-group-actions{display:flex;gap:3px;flex-shrink:0;}
+  .settings-toggle-row{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:8px;}
+  .settings-toggle-chip{
+    background:none;border:1px solid var(--line-strong);color:var(--text-muted);
+    font-family:'IBM Plex Mono', monospace;font-size:9.5px;letter-spacing:0.02em;
+    padding:4px 8px;border-radius:12px;cursor:pointer;
+  }
+  .settings-toggle-chip:hover{border-color:var(--gold-dim);color:var(--text);}
+  .settings-toggle-chip.active{background:var(--gold-dim);color:var(--ink-900);border-color:var(--gold-dim);font-weight:600;}
   .settings-icon-btn{
     background:none;border:1px solid var(--line-strong);color:var(--text-muted);
     font-size:11px;line-height:1;padding:5px 7px;border-radius:6px;cursor:pointer;
@@ -896,6 +904,7 @@
 
     <section class="settings-intro">
       <p class="settings-note">Manage the main categories and their subcategories used across Transactions, P&amp;L, and Budgets. Renaming or deleting a category only affects future entries — past transactions keep the category name they were saved with.</p>
+      <p class="settings-note"><strong>Income</strong>: budgets in this group count as positive (income) instead of negative (cost). <strong>Excl. P&amp;L</strong>: this group's transactions are left out of Income/Expenses/Net and the whole P&amp;L report (like Umbuchung). <strong>Excl. Total I</strong>: still shown in the P&amp;L report, but left out of the Total I subtotal (like Investitionen).</p>
     </section>
 
     <section class="settings-groups">
@@ -1171,6 +1180,11 @@ function renderSettings(){
           <button class="settings-icon-btn danger" data-action="group-delete" data-group-id="${group.id}" aria-label="Delete main category">🗑</button>
         </div>
       </div>
+      <div class="settings-toggle-row">
+        <button class="settings-toggle-chip ${group.isIncome?'active':''}" data-action="toggle-income" data-group-id="${group.id}">Income</button>
+        <button class="settings-toggle-chip ${group.excludeFromPL?'active':''}" data-action="toggle-excludepl" data-group-id="${group.id}">Excl. P&amp;L</button>
+        <button class="settings-toggle-chip ${group.excludeFromTotalI?'active':''}" data-action="toggle-excludetotal1" data-group-id="${group.id}">Excl. Total I</button>
+      </div>
       <div class="settings-cat-rows">${catsHtml}</div>
       <button class="settings-add-cat" data-action="cat-add" data-group-id="${group.id}">+ add category</button>
     `;
@@ -1198,6 +1212,20 @@ function renderSettings(){
   });
 
   // Icon button actions
+  // Group flag toggles
+  container.querySelectorAll('.settings-toggle-chip').forEach(btn=>{
+    btn.addEventListener('click', async ()=>{
+      const action = btn.dataset.action;
+      const g = categoryGroups.find(x=>x.id===btn.dataset.groupId);
+      if(!g) return;
+      if(action==='toggle-income') g.isIncome = !g.isIncome;
+      else if(action==='toggle-excludepl') g.excludeFromPL = !g.excludeFromPL;
+      else if(action==='toggle-excludetotal1') g.excludeFromTotalI = !g.excludeFromTotalI;
+      await saveCategoryGroups();
+      render();
+    });
+  });
+
   container.querySelectorAll('.settings-icon-btn').forEach(btn=>{
     btn.addEventListener('click', async ()=>{
       const action = btn.dataset.action;
@@ -2124,6 +2152,7 @@ function render(){
   if(document.getElementById('loadDate')) updateLoadSub();
   renderHistory();
   renderInvestmentTab();
+  renderSettings();
   populateTxAccountSelect();
   renderTransactions();
   renderPL();
@@ -3087,6 +3116,14 @@ document.getElementById('budgetCsvFileInput').addEventListener('change', (e)=>{
     e.target.value = '';
   };
   reader.readAsText(file);
+});
+
+document.getElementById('addGroupBtn').addEventListener('click', async ()=>{
+  const name = prompt('New main category name:');
+  if(!name || !name.trim()) return;
+  categoryGroups.push({ id: uid('grp'), name: name.trim(), isIncome:false, excludeFromPL:false, excludeFromTotalI:false });
+  await saveCategoryGroups();
+  render();
 });
 
 loadData();
