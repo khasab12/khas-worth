@@ -332,8 +332,6 @@
   .tx-summary-value{
     font-family:'IBM Plex Mono', monospace;font-size:14px;font-variant-numeric:tabular-nums;color:var(--text);
   }
-  .tx-summary-value.income{color:var(--gold);}
-  .tx-summary-value.expense{color:var(--burgundy);}
 
   .tx-add{
     margin-bottom:28px;padding:16px;border:1px solid var(--line-strong);border-radius:var(--radius);
@@ -468,6 +466,53 @@
   .pl-grand-total .pl-row-label{font-family:'Fraunces', serif;font-size:14px;}
   .pl-budget-actions{display:flex;gap:8px;justify-content:center;margin-top:6px;margin-bottom:34px;}
 
+  /* Settings tab */
+  .settings-note{
+    font-size:12px;color:var(--text-muted);line-height:1.6;margin:0 0 22px;
+  }
+  .settings-group{
+    margin-bottom:14px;padding:12px 14px;border:1px solid var(--line-strong);border-radius:var(--radius);
+    background:var(--ink-800);
+  }
+  .settings-group-head{
+    display:flex;align-items:center;gap:6px;padding-bottom:8px;margin-bottom:6px;
+    border-bottom:1px solid var(--line-strong);
+  }
+  .settings-group-name{
+    flex:1;min-width:0;background:transparent;border:none;border-bottom:1px solid transparent;
+    font-family:'Fraunces', serif;font-weight:500;font-size:14px;color:var(--text);padding:3px 0;
+  }
+  .settings-group-name:focus{outline:none;border-bottom:1px solid var(--gold-dim);}
+  .settings-group-actions{display:flex;gap:3px;flex-shrink:0;}
+  .settings-icon-btn{
+    background:none;border:1px solid var(--line-strong);color:var(--text-muted);
+    font-size:11px;line-height:1;padding:5px 7px;border-radius:6px;cursor:pointer;
+  }
+  .settings-icon-btn:hover{color:var(--text);border-color:var(--gold-dim);}
+  .settings-icon-btn.danger:hover{color:#FFFFFF;background:var(--burgundy);border-color:var(--burgundy);}
+  .settings-icon-btn:disabled{opacity:0.3;cursor:default;}
+  .settings-icon-btn:disabled:hover{color:var(--text-muted);border-color:var(--line-strong);background:none;}
+
+  .settings-cat-row{
+    display:flex;align-items:center;gap:6px;padding:5px 0;
+    border-bottom:1px solid var(--line);
+  }
+  .settings-cat-row:last-child{border-bottom:none;}
+  .settings-cat-name{
+    flex:1;min-width:0;background:transparent;border:none;border-bottom:1px solid transparent;
+    font-size:12.5px;color:var(--text);padding:2px 0;
+  }
+  .settings-cat-name:focus{outline:none;border-bottom:1px solid var(--line-strong);}
+  .settings-cat-actions{display:flex;gap:3px;flex-shrink:0;}
+  .settings-add-cat{
+    background:none;border:1px dashed var(--line-strong);color:var(--text-muted);
+    font-family:'IBM Plex Mono', monospace;font-size:11px;letter-spacing:0.04em;
+    padding:7px 10px;border-radius:7px;width:100%;cursor:pointer;text-align:left;
+    margin-top:8px;
+  }
+  .settings-add-cat:hover{color:var(--text);border-color:var(--gold-dim);}
+  #addGroupBtn{margin-top:6px;}
+
   .mini-chart-section{margin-bottom:28px;}
   .mini-chart-section .ledger-head{margin-bottom:2px;}
   .mini-chart-title{
@@ -579,50 +624,7 @@
         </div>
         <div class="fr">
           <select id="txAccountSelect"></select>
-          <select id="txCategorySelect">
-            <optgroup label="A Einnahmen">
-              <option>Gehalt</option>
-              <option>Partneranteil</option>
-              <option>Cashback</option>
-              <option>Dividenden</option>
-              <option>Zinseinnahmen</option>
-            </optgroup>
-            <optgroup label="B Fixe Kosten">
-              <option>Transport</option>
-              <option>Versicherungen</option>
-              <option>Miete</option>
-              <option>Kredit</option>
-              <option>Abos</option>
-              <option>Strom</option>
-              <option>Telekommunikation</option>
-              <option>AE</option>
-              <option>Kita</option>
-            </optgroup>
-            <optgroup label="C Notwendige Kosten">
-              <option>Externverpflegung</option>
-              <option>Drogerie</option>
-              <option>Lebensmittel</option>
-            </optgroup>
-            <optgroup label="D Variable Kosten">
-              <option>Freizeit</option>
-              <option>Gesundheit</option>
-              <option>Shopping</option>
-              <option>Restaurant</option>
-              <option>Zinsausgaben</option>
-              <option>Sonstiges</option>
-            </optgroup>
-            <optgroup label="E Urlaub">
-              <option>Urlaub</option>
-            </optgroup>
-            <optgroup label="F Investitionen">
-              <option>ETF</option>
-              <option>Optionsscheine</option>
-              <option>Aktien</option>
-            </optgroup>
-            <optgroup label="G Umbuchung">
-              <option>Umbuchung</option>
-            </optgroup>
-          </select>
+          <select id="txCategorySelect"></select>
         </div>
         <div class="fr">
           <input type="number" id="txAmount" placeholder="Amount" inputmode="decimal" />
@@ -890,6 +892,22 @@
 
   </div>
 
+  <div class="tab-panel" id="tabSettings" style="display:none;">
+
+    <section class="settings-intro">
+      <p class="settings-note">Manage the main categories and their subcategories used across Transactions, P&amp;L, and Budgets. Renaming or deleting a category only affects future entries — past transactions keep the category name they were saved with.</p>
+    </section>
+
+    <section class="settings-groups">
+      <div class="ledger-head">
+        <h2>Categories</h2>
+      </div>
+      <div id="settingsGroupsList"></div>
+      <button class="add-toggle" id="addGroupBtn">+ add main category</button>
+    </section>
+
+  </div>
+
 </div>
 
 <nav class="bottom-nav">
@@ -899,6 +917,7 @@
   <button class="nav-btn" id="navDividends" data-tab="tabDividends" style="display:none;">Dividends</button>
   <button class="nav-btn" id="navVisualization" data-tab="tabVisualization">Visualization</button>
   <button class="nav-btn" id="navInvestment" data-tab="tabInvestment" style="display:none;">Investment</button>
+  <button class="nav-btn" id="navSettings" data-tab="tabSettings">Settings</button>
 </nav>
 
 <div class="modal-overlay" id="accountModalOverlay">
@@ -947,50 +966,7 @@
       </div>
       <div class="fr">
         <select id="txModalAccount"></select>
-        <select id="txModalCategory">
-          <optgroup label="A Einnahmen">
-            <option>Gehalt</option>
-            <option>Partneranteil</option>
-            <option>Cashback</option>
-            <option>Dividenden</option>
-            <option>Zinseinnahmen</option>
-          </optgroup>
-          <optgroup label="B Fixe Kosten">
-            <option>Transport</option>
-            <option>Versicherungen</option>
-            <option>Miete</option>
-            <option>Kredit</option>
-            <option>Abos</option>
-            <option>Strom</option>
-            <option>Telekommunikation</option>
-            <option>AE</option>
-            <option>Kita</option>
-          </optgroup>
-          <optgroup label="C Notwendige Kosten">
-            <option>Externverpflegung</option>
-            <option>Drogerie</option>
-            <option>Lebensmittel</option>
-          </optgroup>
-          <optgroup label="D Variable Kosten">
-            <option>Freizeit</option>
-            <option>Gesundheit</option>
-            <option>Shopping</option>
-            <option>Restaurant</option>
-            <option>Zinsausgaben</option>
-            <option>Sonstiges</option>
-          </optgroup>
-          <optgroup label="E Urlaub">
-            <option>Urlaub</option>
-          </optgroup>
-          <optgroup label="F Investitionen">
-            <option>ETF</option>
-            <option>Optionsscheine</option>
-            <option>Aktien</option>
-          </optgroup>
-          <optgroup label="G Umbuchung">
-            <option>Umbuchung</option>
-          </optgroup>
-        </select>
+        <select id="txModalCategory"></select>
       </div>
       <div class="fr">
         <input type="number" id="txModalAmount" inputmode="decimal" />
@@ -1029,6 +1005,55 @@ let transactions = [];
 let txCurrentPage = 1;
 let dividends = [];
 let budgets = [];
+let categoryGroups = [];
+let categories = [];
+
+function seedDefaultCategories(){
+  categoryGroups = [
+    {id:'grp_a', name:'A Einnahmen', isIncome:true, excludeFromPL:false, excludeFromTotalI:false},
+    {id:'grp_b', name:'B Fixe Kosten', excludeFromPL:false, excludeFromTotalI:false},
+    {id:'grp_c', name:'C Notwendige Kosten', excludeFromPL:false, excludeFromTotalI:false},
+    {id:'grp_d', name:'D Variable Kosten', excludeFromPL:false, excludeFromTotalI:false},
+    {id:'grp_e', name:'E Urlaub', excludeFromPL:false, excludeFromTotalI:false},
+    {id:'grp_f', name:'F Investitionen', excludeFromPL:false, excludeFromTotalI:true},
+    {id:'grp_g', name:'G Umbuchung', excludeFromPL:true, excludeFromTotalI:true},
+  ];
+  const defs = [
+    ['grp_a','Gehalt'],['grp_a','Partneranteil'],['grp_a','Cashback'],['grp_a','Dividenden'],['grp_a','Zinseinnahmen'],
+    ['grp_b','Transport'],['grp_b','Versicherungen'],['grp_b','Miete'],['grp_b','Kredit'],['grp_b','Abos'],['grp_b','Strom'],['grp_b','Telekommunikation'],['grp_b','AE'],['grp_b','Kita'],
+    ['grp_c','Externverpflegung'],['grp_c','Drogerie'],['grp_c','Lebensmittel'],
+    ['grp_d','Freizeit'],['grp_d','Gesundheit'],['grp_d','Shopping'],['grp_d','Restaurant'],['grp_d','Zinsausgaben'],['grp_d','Sonstiges'],
+    ['grp_e','Urlaub'],
+    ['grp_f','ETF'],['grp_f','Optionsscheine'],['grp_f','Aktien'],
+    ['grp_g','Umbuchung'],
+  ];
+  categories = defs.map(([groupId,name],i)=>({ id:'cat_seed_'+i, name, groupId }));
+}
+
+function categoriesInGroup(groupId){
+  return categories.filter(c=>c.groupId===groupId);
+}
+function findCategoryGroup(catName){
+  const cat = categories.find(c=>c.name===catName);
+  return cat ? categoryGroups.find(g=>g.id===cat.groupId) : null;
+}
+function isCategoryExcludedFromPL(catName){
+  const g = findCategoryGroup(catName);
+  return g ? !!g.excludeFromPL : false;
+}
+function allPLCategoryNames(){
+  return categories.filter(c=>{
+    const g = categoryGroups.find(gr=>gr.id===c.groupId);
+    return g && !g.excludeFromPL;
+  }).map(c=>c.name);
+}
+function buildCategoryOptgroupsHtml(){
+  return categoryGroups.map(g=>{
+    const cats = categoriesInGroup(g.id);
+    if(cats.length===0) return '';
+    return `<optgroup label="${escapeHtml(g.name)}">` + cats.map(c=>`<option>${escapeHtml(c.name)}</option>`).join('') + `</optgroup>`;
+  }).join('');
+}
 
 async function loadData(){
   try{
@@ -1051,6 +1076,18 @@ async function loadData(){
     const bg = localStorage.getItem('ledger_budgets');
     budgets = bg ? JSON.parse(bg) : [];
   }catch(e){ budgets = []; }
+  try{
+    const cg = localStorage.getItem('ledger_categoryGroups');
+    const cc = localStorage.getItem('ledger_categories');
+    if(cg && cc){
+      categoryGroups = JSON.parse(cg);
+      categories = JSON.parse(cc);
+    } else {
+      seedDefaultCategories();
+      await saveCategoryGroups();
+      await saveCategories();
+    }
+  }catch(e){ seedDefaultCategories(); }
   render();
 }
 
@@ -1074,6 +1111,14 @@ async function saveBudgets(){
   try{ localStorage.setItem('ledger_budgets', JSON.stringify(budgets)); }
   catch(e){ console.error('save budgets failed', e); }
 }
+async function saveCategoryGroups(){
+  try{ localStorage.setItem('ledger_categoryGroups', JSON.stringify(categoryGroups)); }
+  catch(e){ console.error('save category groups failed', e); }
+}
+async function saveCategories(){
+  try{ localStorage.setItem('ledger_categories', JSON.stringify(categories)); }
+  catch(e){ console.error('save categories failed', e); }
+}
 
 function getBudget(month, category){
   const b = budgets.find(x=>x.month===month && x.category===category);
@@ -1094,6 +1139,119 @@ function totals(){
   const assetsTotal = accounts.filter(a=>a.type==='asset').reduce((s,a)=>s+Number(a.balance||0),0);
   const liabTotal = accounts.filter(a=>a.type==='liability').reduce((s,a)=>s+Number(a.balance||0),0);
   return { assetsTotal, liabTotal, netWorth: assetsTotal - liabTotal };
+}
+
+function uid(prefix){ return prefix+'_'+Date.now()+'_'+Math.random().toString(36).slice(2,7); }
+
+function renderSettings(){
+  const container = document.getElementById('settingsGroupsList');
+  container.innerHTML = '';
+
+  categoryGroups.forEach((group, gIdx)=>{
+    const groupEl = document.createElement('div');
+    groupEl.className = 'settings-group';
+
+    const catsHtml = categoriesInGroup(group.id).map((cat, cIdx, arr)=>`
+      <div class="settings-cat-row">
+        <input type="text" class="settings-cat-name" value="${escapeHtml(cat.name)}" data-cat-id="${cat.id}" />
+        <div class="settings-cat-actions">
+          <button class="settings-icon-btn" data-action="cat-up" data-cat-id="${cat.id}" ${cIdx===0?'disabled':''} aria-label="Move up">↑</button>
+          <button class="settings-icon-btn" data-action="cat-down" data-cat-id="${cat.id}" ${cIdx===arr.length-1?'disabled':''} aria-label="Move down">↓</button>
+          <button class="settings-icon-btn danger" data-action="cat-delete" data-cat-id="${cat.id}" aria-label="Delete category">🗑</button>
+        </div>
+      </div>
+    `).join('');
+
+    groupEl.innerHTML = `
+      <div class="settings-group-head">
+        <input type="text" class="settings-group-name" value="${escapeHtml(group.name)}" data-group-id="${group.id}" />
+        <div class="settings-group-actions">
+          <button class="settings-icon-btn" data-action="group-up" data-group-id="${group.id}" ${gIdx===0?'disabled':''} aria-label="Move up">↑</button>
+          <button class="settings-icon-btn" data-action="group-down" data-group-id="${group.id}" ${gIdx===categoryGroups.length-1?'disabled':''} aria-label="Move down">↓</button>
+          <button class="settings-icon-btn danger" data-action="group-delete" data-group-id="${group.id}" aria-label="Delete main category">🗑</button>
+        </div>
+      </div>
+      <div class="settings-cat-rows">${catsHtml}</div>
+      <button class="settings-add-cat" data-action="cat-add" data-group-id="${group.id}">+ add category</button>
+    `;
+    container.appendChild(groupEl);
+  });
+
+  // Group name rename
+  container.querySelectorAll('.settings-group-name').forEach(inp=>{
+    inp.addEventListener('change', async (e)=>{
+      const g = categoryGroups.find(x=>x.id===e.target.dataset.groupId);
+      const newName = e.target.value.trim();
+      if(g && newName){ g.name = newName; await saveCategoryGroups(); render(); }
+      else if(g){ e.target.value = g.name; }
+    });
+  });
+
+  // Category name rename
+  container.querySelectorAll('.settings-cat-name').forEach(inp=>{
+    inp.addEventListener('change', async (e)=>{
+      const c = categories.find(x=>x.id===e.target.dataset.catId);
+      const newName = e.target.value.trim();
+      if(c && newName){ c.name = newName; await saveCategories(); render(); }
+      else if(c){ e.target.value = c.name; }
+    });
+  });
+
+  // Icon button actions
+  container.querySelectorAll('.settings-icon-btn').forEach(btn=>{
+    btn.addEventListener('click', async ()=>{
+      const action = btn.dataset.action;
+      if(action==='group-up' || action==='group-down'){
+        const id = btn.dataset.groupId;
+        const idx = categoryGroups.findIndex(g=>g.id===id);
+        const swapWith = action==='group-up' ? idx-1 : idx+1;
+        if(swapWith<0 || swapWith>=categoryGroups.length) return;
+        [categoryGroups[idx], categoryGroups[swapWith]] = [categoryGroups[swapWith], categoryGroups[idx]];
+        await saveCategoryGroups();
+        render();
+      } else if(action==='group-delete'){
+        const id = btn.dataset.groupId;
+        const g = categoryGroups.find(x=>x.id===id);
+        const catCount = categoriesInGroup(id).length;
+        const msg = catCount>0
+          ? `Delete "${g.name}" and its ${catCount} categor${catCount===1?'y':'ies'}? This can't be undone.`
+          : `Delete "${g.name}"? This can't be undone.`;
+        if(!confirm(msg)) return;
+        categoryGroups = categoryGroups.filter(x=>x.id!==id);
+        categories = categories.filter(c=>c.groupId!==id);
+        await saveCategoryGroups();
+        await saveCategories();
+        render();
+      } else if(action==='cat-up' || action==='cat-down'){
+        const id = btn.dataset.catId;
+        const c = categories.find(x=>x.id===id);
+        const siblings = categoriesInGroup(c.groupId);
+        const posInSiblings = siblings.findIndex(x=>x.id===id);
+        const swapPos = action==='cat-up' ? posInSiblings-1 : posInSiblings+1;
+        if(swapPos<0 || swapPos>=siblings.length) return;
+        const otherCat = siblings[swapPos];
+        const idxA = categories.findIndex(x=>x.id===c.id);
+        const idxB = categories.findIndex(x=>x.id===otherCat.id);
+        [categories[idxA], categories[idxB]] = [categories[idxB], categories[idxA]];
+        await saveCategories();
+        render();
+      } else if(action==='cat-delete'){
+        const id = btn.dataset.catId;
+        const c = categories.find(x=>x.id===id);
+        if(!confirm(`Delete category "${c.name}"? This can't be undone.`)) return;
+        categories = categories.filter(x=>x.id!==id);
+        await saveCategories();
+        render();
+      } else if(action==='cat-add'){
+        const groupId = btn.dataset.groupId;
+        const name = prompt('New category name:');
+        if(!name || !name.trim()) return;
+        categories.push({ id: uid('cat'), name: name.trim(), groupId });
+        await saveCategories();
+        render();
+      }
+    });
+  });
 }
 
 function renderInvestmentTab(){
@@ -1152,17 +1310,14 @@ function renderTransactions(){
   // --- Category filter ---
   const catSel = document.getElementById('txCategoryFilterSelect');
   const prevCat = catSel.value || 'all';
-  if(!catSel.dataset.built){
-    let catHtml = `<option value="all">All Categories</option>`;
-    PL_GROUP_ORDER.forEach(groupName=>{
-      const cats = Object.keys(CATEGORY_GROUPS).filter(c=> CATEGORY_GROUPS[c]===groupName);
-      catHtml += `<optgroup label="${groupName}">` + cats.map(c=>`<option value="${c}">${c}</option>`).join('') + `</optgroup>`;
-    });
-    catHtml += `<optgroup label="G Umbuchung"><option value="Umbuchung">Umbuchung</option></optgroup>`;
-    catSel.innerHTML = catHtml;
-    catSel.dataset.built = '1';
-  }
+  let catHtml = `<option value="all">All Categories</option>` + buildCategoryOptgroupsHtml();
+  catSel.innerHTML = catHtml;
   catSel.value = prevCat;
+
+  const addFormCatSel = document.getElementById('txCategorySelect');
+  const prevAddCat = addFormCatSel.value;
+  addFormCatSel.innerHTML = buildCategoryOptgroupsHtml();
+  if(prevAddCat && [...addFormCatSel.options].some(o=>o.value===prevAddCat)){ addFormCatSel.value = prevAddCat; }
   const selectedCategory = catSel.value;
 
   // --- Period filter (All, or specific Month/Year) ---
@@ -1188,11 +1343,20 @@ function renderTransactions(){
 
   document.getElementById('txCountLabel').textContent = `(${filteredTx.length})`;
 
-  const income = filteredTx.filter(t=>t.type==='income' && t.category!=='Umbuchung').reduce((s,t)=>s+Number(t.amount||0),0);
-  const expense = filteredTx.filter(t=>t.type==='expense' && t.category!=='Umbuchung').reduce((s,t)=>s+Number(t.amount||0),0);
-  document.getElementById('txIncomeTotal').textContent = fmtPlain(income);
-  document.getElementById('txExpenseTotal').textContent = fmtPlain(expense);
-  document.getElementById('txNetTotal').textContent = fmtPlain(income - expense);
+  const income = filteredTx.filter(t=>t.type==='income' && !isCategoryExcludedFromPL(t.category)).reduce((s,t)=>s+Number(t.amount||0),0);
+  const expense = filteredTx.filter(t=>t.type==='expense' && !isCategoryExcludedFromPL(t.category)).reduce((s,t)=>s+Number(t.amount||0),0);
+  const net = income - expense;
+  const incomeEl = document.getElementById('txIncomeTotal');
+  incomeEl.textContent = fmtPlain(income);
+  incomeEl.style.color = 'var(--money-green)';
+
+  const expenseEl = document.getElementById('txExpenseTotal');
+  expenseEl.textContent = fmtPlain(expense);
+  expenseEl.style.color = 'var(--money-red)';
+
+  const netEl = document.getElementById('txNetTotal');
+  netEl.textContent = fmtPlain(net);
+  netEl.style.color = net > 0 ? 'var(--money-green)' : (net < 0 ? 'var(--money-red)' : '');
 
   const container = document.getElementById('txRows');
   if(transactions.length===0){
@@ -1265,16 +1429,6 @@ function renderTransactions(){
   }
 }
 
-const CATEGORY_GROUPS = {
-  'Gehalt':'A Einnahmen','Partneranteil':'A Einnahmen','Cashback':'A Einnahmen','Dividenden':'A Einnahmen','Zinseinnahmen':'A Einnahmen',
-  'Transport':'B Fixe Kosten','Versicherungen':'B Fixe Kosten','Miete':'B Fixe Kosten','Kredit':'B Fixe Kosten','Abos':'B Fixe Kosten','Strom':'B Fixe Kosten','Telekommunikation':'B Fixe Kosten','AE':'B Fixe Kosten','Kita':'B Fixe Kosten',
-  'Externverpflegung':'C Notwendige Kosten','Drogerie':'C Notwendige Kosten','Lebensmittel':'C Notwendige Kosten',
-  'Freizeit':'D Variable Kosten','Gesundheit':'D Variable Kosten','Shopping':'D Variable Kosten','Restaurant':'D Variable Kosten','Zinsausgaben':'D Variable Kosten','Sonstiges':'D Variable Kosten',
-  'Urlaub':'E Urlaub',
-  'ETF':'F Investitionen','Optionsscheine':'F Investitionen','Aktien':'F Investitionen'
-};
-const PL_GROUP_ORDER = ['A Einnahmen','B Fixe Kosten','C Notwendige Kosten','D Variable Kosten','E Urlaub','F Investitionen'];
-
 function amtColorClass(n){
   return Math.abs(n) < 0.005 ? '' : (n > 0 ? 'amt-green' : 'amt-red');
 }
@@ -1299,20 +1453,23 @@ function renderPL(){
   }
   const selectedMonth = monthInput.value; // 'YYYY-MM'
 
-  const monthTx = transactions.filter(t=> t.date.slice(0,7) === selectedMonth && t.category !== 'Umbuchung');
+  const monthTx = transactions.filter(t=> t.date.slice(0,7) === selectedMonth && !isCategoryExcludedFromPL(t.category));
 
   // --- Pass 1: compute everything first ---
   let grandActual = 0, grandBudget = 0, grandDiff = 0;
   let grandActualI = 0, grandBudgetI = 0, grandDiffI = 0;
   const groupResults = [];
 
-  PL_GROUP_ORDER.forEach(groupName=>{
-    const isIncomeGroup = groupName === 'A Einnahmen';
-    const categoriesInGroup = Object.keys(CATEGORY_GROUPS).filter(c=> CATEGORY_GROUPS[c] === groupName);
+  const plGroups = categoryGroups.filter(g=>!g.excludeFromPL);
+
+  plGroups.forEach(group=>{
+    const isIncomeGroup = !!group.isIncome;
+    const catsInGroup = categoriesInGroup(group.id);
 
     let groupActual = 0, groupBudget = 0, groupDiff = 0;
 
-    const rowsHtml = categoriesInGroup.map(cat=>{
+    const rowsHtml = catsInGroup.map(catObj=>{
+      const cat = catObj.name;
       const catTx = monthTx.filter(t=>t.category===cat);
       const actual = catTx.reduce((s,t)=> s + (t.type==='income' ? Number(t.amount||0) : -Number(t.amount||0)), 0);
       const budgetMag = getBudget(selectedMonth, cat); // stored as positive magnitude, or null
@@ -1334,13 +1491,13 @@ function renderPL(){
     grandActual += groupActual;
     grandBudget += groupBudget;
     grandDiff += groupDiff;
-    if(groupName !== 'F Investitionen'){
+    if(!group.excludeFromTotalI){
       grandActualI += groupActual;
       grandBudgetI += groupBudget;
       grandDiffI += groupDiff;
     }
 
-    groupResults.push({ groupName, rowsHtml, groupActual, groupBudget, groupDiff });
+    groupResults.push({ groupName: group.name, excludeFromTotalI: !!group.excludeFromTotalI, rowsHtml, groupActual, groupBudget, groupDiff });
   });
 
   // --- Pass 2: render ---
@@ -1379,12 +1536,21 @@ function renderPL(){
   `;
   container.appendChild(headerEl);
 
-  groupResults.forEach(({groupName, rowsHtml, groupActual, groupBudget, groupDiff})=>{
+  let totalIInserted = false;
+  groupResults.forEach(({groupName, excludeFromTotalI, rowsHtml, groupActual, groupBudget, groupDiff}, idx)=>{
+    if(excludeFromTotalI && !totalIInserted){
+      const totalIEl = document.createElement('div');
+      totalIEl.className = 'pl-group pl-grand-total';
+      totalIEl.innerHTML = totalRowHtml('Total I', grandActualI, grandBudgetI, grandDiffI);
+      container.appendChild(totalIEl);
+      totalIInserted = true;
+    }
+
     const groupEl = document.createElement('div');
     groupEl.className = 'pl-group';
     groupEl.innerHTML = `
       <div class="pl-group-head">
-        <h3 class="pl-group-title">${groupName}</h3>
+        <h3 class="pl-group-title">${escapeHtml(groupName)}</h3>
       </div>
       ${rowsHtml}
       <div class="pl-row pl-row-total">
@@ -1396,13 +1562,13 @@ function renderPL(){
     `;
     container.appendChild(groupEl);
 
-    if(groupName === 'E Urlaub'){
-      const totalIEl = document.createElement('div');
-      totalIEl.className = 'pl-group pl-grand-total';
-      totalIEl.innerHTML = totalRowHtml('Total I', grandActualI, grandBudgetI, grandDiffI);
-      container.appendChild(totalIEl);
-    }
-    if(groupName === 'F Investitionen'){
+    if(idx === groupResults.length - 1){
+      if(!totalIInserted){
+        const totalIEl = document.createElement('div');
+        totalIEl.className = 'pl-group pl-grand-total';
+        totalIEl.innerHTML = totalRowHtml('Total I', grandActualI, grandBudgetI, grandDiffI);
+        container.appendChild(totalIEl);
+      }
       const totalIIEl = document.createElement('div');
       totalIIEl.className = 'pl-group pl-grand-total';
       totalIIEl.innerHTML = totalRowHtml('Total II', grandActual, grandBudget, grandDiff);
@@ -1682,6 +1848,7 @@ function renderTxModal(){
   populateTxModalAccountSelect(t.accountId);
 
   const catSel = document.getElementById('txModalCategory');
+  catSel.innerHTML = buildCategoryOptgroupsHtml();
   if(![...catSel.options].some(o=>o.value===t.category)){
     const opt = document.createElement('option');
     opt.value = t.category; opt.textContent = t.category;
@@ -2848,7 +3015,7 @@ document.getElementById('txModalDeleteBtn').addEventListener('click', async ()=>
 document.getElementById('budgetExportBtn').addEventListener('click', ()=>{
   const monthInput = document.getElementById('plMonthSelect');
   const selectedMonth = monthInput.value || new Date().toISOString().slice(0,7);
-  const allCategories = Object.keys(CATEGORY_GROUPS);
+  const allCategories = allPLCategoryNames();
   const header = ['Category','Budget'];
   const rows = allCategories.map(cat=>{
     const val = getBudget(selectedMonth, cat);
@@ -2904,7 +3071,7 @@ document.getElementById('budgetCsvFileInput').addEventListener('change', (e)=>{
         const parts = parseCsvLine(line);
         if(parts.length <= Math.max(catIdx,budgetIdx)){ skipped++; return; }
         const cat = parts[catIdx];
-        if(!Object.keys(CATEGORY_GROUPS).includes(cat)){ skipped++; return; }
+        if(!allPLCategoryNames().includes(cat)){ skipped++; return; }
         const raw = parts[budgetIdx].trim();
         const amount = raw==='' ? null : Math.abs(Number(raw)||0);
         setBudget(selectedMonth, cat, amount);
