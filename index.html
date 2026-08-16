@@ -123,7 +123,7 @@
     background:none;border:none;padding:0;margin:0;text-align:left;cursor:pointer;
     display:block;width:100%;
   }
-  .row .name-btn .name{font-size:12.5px;font-weight:500;color:var(--text);}
+  .row .name-btn .name{font-size:12.5px;font-weight:400;color:var(--text);}
   .row .name-btn:hover .name{color:var(--gold);}
   .row .cat{font-family:'IBM Plex Mono', monospace;font-size:9px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.05em;margin-top:1px;}
   .row .right{display:flex;align-items:center;gap:6px;flex-shrink:0;}
@@ -467,6 +467,15 @@
   .pl-budget-actions{display:flex;gap:8px;justify-content:center;margin-top:6px;margin-bottom:34px;}
 
   /* Settings tab */
+  .settings-subnav{
+    display:flex;gap:6px;margin-bottom:20px;border-bottom:1px solid var(--line-strong);padding-bottom:12px;
+  }
+  .settings-subnav-btn{
+    flex:1;background:none;border:1px solid var(--line-strong);color:var(--text-muted);
+    font-family:'IBM Plex Sans', sans-serif;font-weight:500;font-size:12.5px;
+    padding:9px 8px;border-radius:8px;cursor:pointer;
+  }
+  .settings-subnav-btn.active{background:var(--paper);color:var(--ink-900);border-color:var(--paper);}
   .settings-note{
     font-size:12px;color:var(--text-muted);line-height:1.6;margin:0 0 22px;
   }
@@ -703,14 +712,7 @@
             <input type="text" id="assetName" placeholder="Name (e.g. Chase Checking)" />
           </div>
           <div class="fr">
-            <select id="assetCategory">
-              <option>Bargeld</option>
-              <option>Girokonto</option>
-              <option>Gemeinschaftskonto</option>
-              <option>Debitkarte</option>
-              <option>Depot</option>
-              <option>Altersvorsorge</option>
-            </select>
+            <select id="assetCategory"></select>
             <input type="number" id="assetBalance" placeholder="Balance" inputmode="decimal" />
           </div>
           <button class="save-btn" id="assetSave">Add asset</button>
@@ -731,12 +733,7 @@
             <input type="text" id="liabName" placeholder="Name (e.g. Amex Card)" />
           </div>
           <div class="fr">
-            <select id="liabCategory">
-              <option>Kreditkarte</option>
-              <option>Lombardkredit</option>
-              <option>Kredit</option>
-              <option>Leihe</option>
-            </select>
+            <select id="liabCategory"></select>
             <input type="number" id="liabBalance" placeholder="Balance" inputmode="decimal" />
           </div>
           <button class="save-btn" id="liabSave">Add liability</button>
@@ -902,18 +899,51 @@
 
   <div class="tab-panel" id="tabSettings" style="display:none;">
 
-    <section class="settings-intro">
-      <p class="settings-note">Manage the main categories and their subcategories used across Transactions, P&amp;L, and Budgets. Renaming or deleting a category only affects future entries — past transactions keep the category name they were saved with.</p>
-      <p class="settings-note"><strong>Income</strong>: budgets in this group count as positive (income) instead of negative (cost). <strong>Excl. P&amp;L</strong>: this group's transactions are left out of Income/Expenses/Net and the whole P&amp;L report (like Umbuchung). <strong>Excl. Total I</strong>: still shown in the P&amp;L report, but left out of the Total I subtotal (like Investitionen).</p>
-    </section>
+    <div class="settings-subnav">
+      <button class="settings-subnav-btn active" id="subnavCategories" data-subpanel="settingsPanelCategories">Categories</button>
+      <button class="settings-subnav-btn" id="subnavAccountClasses" data-subpanel="settingsPanelAccountClasses">Account Classes</button>
+    </div>
 
-    <section class="settings-groups">
-      <div class="ledger-head">
-        <h2>Categories</h2>
-      </div>
-      <div id="settingsGroupsList"></div>
-      <button class="add-toggle" id="addGroupBtn">+ add main category</button>
-    </section>
+    <div class="settings-subpanel" id="settingsPanelCategories">
+
+      <section class="settings-intro">
+        <p class="settings-note">Manage the main categories and their subcategories used across Transactions, P&amp;L, and Budgets. Renaming or deleting a category only affects future entries — past transactions keep the category name they were saved with.</p>
+        <p class="settings-note"><strong>Income</strong>: budgets in this group count as positive (income) instead of negative (cost). <strong>Excl. P&amp;L</strong>: this group's transactions are left out of Income/Expenses/Net and the whole P&amp;L report (like Umbuchung). <strong>Excl. Total I</strong>: still shown in the P&amp;L report, but left out of the Total I subtotal (like Investitionen).</p>
+      </section>
+
+      <section class="settings-groups">
+        <div class="ledger-head">
+          <h2>Categories</h2>
+        </div>
+        <div id="settingsGroupsList"></div>
+        <button class="add-toggle" id="addGroupBtn">+ add main category</button>
+      </section>
+
+    </div>
+
+    <div class="settings-subpanel" id="settingsPanelAccountClasses" style="display:none;">
+
+      <section class="settings-intro">
+        <p class="settings-note">Manage the account classes used in the Treasury tab (e.g. Girokonto, Depot for assets; Kreditkarte, Kredit for liabilities). Renaming or deleting a class only affects future entries — accounts already using a removed class keep their label until you re-categorize them individually.</p>
+      </section>
+
+      <section class="settings-groups">
+        <div class="ledger-head">
+          <h2>Asset Classes</h2>
+        </div>
+        <div id="settingsAssetClassList"></div>
+        <button class="settings-add-cat" id="addAssetClassBtn">+ add asset class</button>
+      </section>
+
+      <section class="settings-groups">
+        <div class="ledger-head">
+          <h2>Liability Classes</h2>
+        </div>
+        <div id="settingsLiabilityClassList"></div>
+        <button class="settings-add-cat" id="addLiabilityClassBtn">+ add liability class</button>
+      </section>
+
+    </div>
 
   </div>
 
@@ -1016,6 +1046,8 @@ let dividends = [];
 let budgets = [];
 let categoryGroups = [];
 let categories = [];
+let assetClasses = [];
+let liabilityClasses = [];
 
 function seedDefaultCategories(){
   categoryGroups = [
@@ -1037,6 +1069,13 @@ function seedDefaultCategories(){
     ['grp_g','Umbuchung'],
   ];
   categories = defs.map(([groupId,name],i)=>({ id:'cat_seed_'+i, name, groupId }));
+}
+
+function seedDefaultAccountClasses(){
+  assetClasses = ['Bargeld','Girokonto','Gemeinschaftskonto','Debitkarte','Depot','Altersvorsorge']
+    .map((name,i)=>({ id:'ac_seed_'+i, name }));
+  liabilityClasses = ['Kreditkarte','Lombardkredit','Kredit','Leihe']
+    .map((name,i)=>({ id:'lc_seed_'+i, name }));
 }
 
 function categoriesInGroup(groupId){
@@ -1097,6 +1136,18 @@ async function loadData(){
       await saveCategories();
     }
   }catch(e){ seedDefaultCategories(); }
+  try{
+    const ac = localStorage.getItem('ledger_assetClasses');
+    const lc = localStorage.getItem('ledger_liabilityClasses');
+    if(ac && lc){
+      assetClasses = JSON.parse(ac);
+      liabilityClasses = JSON.parse(lc);
+    } else {
+      seedDefaultAccountClasses();
+      await saveAssetClasses();
+      await saveLiabilityClasses();
+    }
+  }catch(e){ seedDefaultAccountClasses(); }
   render();
 }
 
@@ -1127,6 +1178,14 @@ async function saveCategoryGroups(){
 async function saveCategories(){
   try{ localStorage.setItem('ledger_categories', JSON.stringify(categories)); }
   catch(e){ console.error('save categories failed', e); }
+}
+async function saveAssetClasses(){
+  try{ localStorage.setItem('ledger_assetClasses', JSON.stringify(assetClasses)); }
+  catch(e){ console.error('save asset classes failed', e); }
+}
+async function saveLiabilityClasses(){
+  try{ localStorage.setItem('ledger_liabilityClasses', JSON.stringify(liabilityClasses)); }
+  catch(e){ console.error('save liability classes failed', e); }
 }
 
 function getBudget(month, category){
@@ -1284,6 +1343,56 @@ function renderSettings(){
       render();
     });
   });
+}
+
+function renderClassList(containerId, list, saveFn){
+  const container = document.getElementById(containerId);
+  container.innerHTML = list.map((item, idx, arr)=>`
+    <div class="settings-cat-row">
+      <input type="text" class="settings-cat-name" value="${escapeHtml(item.name)}" data-id="${item.id}" />
+      <div class="settings-cat-actions">
+        <button class="settings-icon-btn" data-action="up" data-id="${item.id}" ${idx===0?'disabled':''} aria-label="Move up">↑</button>
+        <button class="settings-icon-btn" data-action="down" data-id="${item.id}" ${idx===arr.length-1?'disabled':''} aria-label="Move down">↓</button>
+        <button class="settings-icon-btn danger" data-action="delete" data-id="${item.id}" aria-label="Delete">🗑</button>
+      </div>
+    </div>
+  `).join('') || `<div class="empty">No classes yet.</div>`;
+
+  container.querySelectorAll('.settings-cat-name').forEach(inp=>{
+    inp.addEventListener('change', async (e)=>{
+      const item = list.find(x=>x.id===e.target.dataset.id);
+      const newName = e.target.value.trim();
+      if(item && newName){ item.name = newName; await saveFn(); render(); }
+      else if(item){ e.target.value = item.name; }
+    });
+  });
+
+  container.querySelectorAll('.settings-icon-btn').forEach(btn=>{
+    btn.addEventListener('click', async ()=>{
+      const action = btn.dataset.action;
+      const id = btn.dataset.id;
+      if(action==='delete'){
+        const item = list.find(x=>x.id===id);
+        if(!confirm(`Delete "${item.name}"? This can't be undone.`)) return;
+        const idx = list.findIndex(x=>x.id===id);
+        list.splice(idx,1);
+        await saveFn();
+        render();
+      } else if(action==='up' || action==='down'){
+        const idx = list.findIndex(x=>x.id===id);
+        const swapWith = action==='up' ? idx-1 : idx+1;
+        if(swapWith<0 || swapWith>=list.length) return;
+        [list[idx], list[swapWith]] = [list[swapWith], list[idx]];
+        await saveFn();
+        render();
+      }
+    });
+  });
+}
+
+function renderAccountClassLists(){
+  renderClassList('settingsAssetClassList', assetClasses, saveAssetClasses);
+  renderClassList('settingsLiabilityClassList', liabilityClasses, saveLiabilityClasses);
 }
 
 function renderInvestmentTab(){
@@ -1672,6 +1781,18 @@ function renderDividends(){
   });
 }
 
+function populateAccountCategorySelects(){
+  const assetSel = document.getElementById('assetCategory');
+  const prevAsset = assetSel.value;
+  assetSel.innerHTML = assetClasses.map(c=>`<option>${escapeHtml(c.name)}</option>`).join('');
+  if(prevAsset && assetClasses.some(c=>c.name===prevAsset)){ assetSel.value = prevAsset; }
+
+  const liabSel = document.getElementById('liabCategory');
+  const prevLiab = liabSel.value;
+  liabSel.innerHTML = liabilityClasses.map(c=>`<option>${escapeHtml(c.name)}</option>`).join('');
+  if(prevLiab && liabilityClasses.some(c=>c.name===prevLiab)){ liabSel.value = prevLiab; }
+}
+
 function renderRows(type, containerId){
   const container = document.getElementById(containerId);
   const rows = accounts.filter(a=>a.type===type);
@@ -1680,7 +1801,7 @@ function renderRows(type, containerId){
     return;
   }
 
-  const orderedCategories = type==='asset' ? ASSET_CATEGORIES : LIABILITY_CATEGORIES;
+  const orderedCategories = (type==='asset' ? assetClasses : liabilityClasses).map(c=>c.name);
   const presentCategories = [...new Set(rows.map(a=>a.category))];
   const categoryOrder = [
     ...orderedCategories.filter(c=> presentCategories.includes(c)),
@@ -1900,9 +2021,6 @@ function closeAccountModal(){
   currentModalAccountId = null;
 }
 
-const ASSET_CATEGORIES = ['Bargeld','Girokonto','Gemeinschaftskonto','Debitkarte','Depot','Altersvorsorge'];
-const LIABILITY_CATEGORIES = ['Kreditkarte','Lombardkredit','Kredit','Leihe'];
-
 function renderAccountModal(){
   const acc = accounts.find(a=>a.id===currentModalAccountId);
   if(!acc){ closeAccountModal(); return; }
@@ -1910,7 +2028,7 @@ function renderAccountModal(){
   document.getElementById('modalNameInput').value = acc.name;
 
   const catSel = document.getElementById('modalCategorySelect');
-  const categoryOptions = acc.type==='asset' ? ASSET_CATEGORIES : LIABILITY_CATEGORIES;
+  const categoryOptions = (acc.type==='asset' ? assetClasses : liabilityClasses).map(c=>c.name);
   let optsHtml = categoryOptions.map(c=>`<option value="${c}">${c}</option>`).join('');
   if(!categoryOptions.includes(acc.category)){
     optsHtml += `<option value="${escapeHtml(acc.category)}">${escapeHtml(acc.category)}</option>`;
@@ -2145,6 +2263,7 @@ function render(){
   document.getElementById('assetsTotal').textContent = fmtPlain(assetsTotal);
   document.getElementById('liabilitiesTotal').textContent = fmtPlain(liabTotal);
 
+  populateAccountCategorySelects();
   renderRows('asset','assetsRows');
   renderRows('liability','liabilitiesRows');
   renderChart();
@@ -2157,6 +2276,7 @@ function render(){
   renderHistory();
   renderInvestmentTab();
   renderSettings();
+  renderAccountClassLists();
   populateTxAccountSelect();
   renderTransactions();
   renderPL();
@@ -3128,6 +3248,31 @@ document.getElementById('addGroupBtn').addEventListener('click', async ()=>{
   categoryGroups.push({ id: uid('grp'), name: name.trim(), isIncome:false, excludeFromPL:false, excludeFromTotalI:false });
   await saveCategoryGroups();
   render();
+});
+
+document.getElementById('addAssetClassBtn').addEventListener('click', async ()=>{
+  const name = prompt('New asset class name:');
+  if(!name || !name.trim()) return;
+  assetClasses.push({ id: uid('ac'), name: name.trim() });
+  await saveAssetClasses();
+  render();
+});
+
+document.getElementById('addLiabilityClassBtn').addEventListener('click', async ()=>{
+  const name = prompt('New liability class name:');
+  if(!name || !name.trim()) return;
+  liabilityClasses.push({ id: uid('lc'), name: name.trim() });
+  await saveLiabilityClasses();
+  render();
+});
+
+document.querySelectorAll('.settings-subnav-btn').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    document.querySelectorAll('.settings-subnav-btn').forEach(b=>b.classList.remove('active'));
+    document.querySelectorAll('.settings-subpanel').forEach(p=>p.style.display='none');
+    btn.classList.add('active');
+    document.getElementById(btn.dataset.subpanel).style.display = 'block';
+  });
 });
 
 loadData();
