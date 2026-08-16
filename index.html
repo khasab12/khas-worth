@@ -1270,14 +1270,18 @@ function renderSettings(){
         categories = categories.filter(x=>x.id!==id);
         await saveCategories();
         render();
-      } else if(action==='cat-add'){
-        const groupId = btn.dataset.groupId;
-        const name = prompt('New category name:');
-        if(!name || !name.trim()) return;
-        categories.push({ id: uid('cat'), name: name.trim(), groupId });
-        await saveCategories();
-        render();
       }
+    });
+  });
+
+  container.querySelectorAll('.settings-add-cat').forEach(btn=>{
+    btn.addEventListener('click', async ()=>{
+      const groupId = btn.dataset.groupId;
+      const name = prompt('New category name:');
+      if(!name || !name.trim()) return;
+      categories.push({ id: uid('cat'), name: name.trim(), groupId });
+      await saveCategories();
+      render();
     });
   });
 }
