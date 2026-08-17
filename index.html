@@ -607,6 +607,7 @@
 
     <div class="tx-summary-head">
       <select id="txCategoryFilterSelect" class="year-select"></select>
+      <select id="txAccountFilterSelect" class="year-select"></select>
       <select id="txPeriodSelect" class="year-select"></select>
     </div>
     <section class="tx-summary">
@@ -1508,6 +1509,22 @@ function renderTransactions(){
   if(prevAddCat && [...addFormCatSel.options].some(o=>o.value===prevAddCat)){ addFormCatSel.value = prevAddCat; }
   const selectedCategory = catSel.value;
 
+  // --- Account filter ---
+  const acctSel = document.getElementById('txAccountFilterSelect');
+  const prevAcct = acctSel.value || 'all';
+  const assetsOpts = accounts.filter(a=>a.type==='asset');
+  const liabOpts = accounts.filter(a=>a.type==='liability');
+  let acctHtml = `<option value="all">All Accounts</option>`;
+  if(assetsOpts.length){
+    acctHtml += `<optgroup label="Assets">` + assetsOpts.map(a=>`<option value="${a.id}">${escapeHtml(a.name)}</option>`).join('') + `</optgroup>`;
+  }
+  if(liabOpts.length){
+    acctHtml += `<optgroup label="Liabilities">` + liabOpts.map(a=>`<option value="${a.id}">${escapeHtml(a.name)}</option>`).join('') + `</optgroup>`;
+  }
+  acctSel.innerHTML = acctHtml;
+  acctSel.value = (prevAcct==='all' || accounts.some(a=>a.id===prevAcct)) ? prevAcct : 'all';
+  const selectedAccountId = acctSel.value;
+
   // --- Period filter (All, or specific Month/Year) ---
   const periodSel = document.getElementById('txPeriodSelect');
   const currentMonth = new Date().toISOString().slice(0,7);
@@ -1526,6 +1543,7 @@ function renderTransactions(){
   const filteredTx = transactions.filter(t=>{
     if(selectedPeriod!=='all' && t.date.slice(0,7)!==selectedPeriod) return false;
     if(selectedCategory!=='all' && t.category!==selectedCategory) return false;
+    if(selectedAccountId!=='all' && t.accountId!==selectedAccountId) return false;
     return true;
   });
 
@@ -2892,6 +2910,7 @@ const txDateInput = document.getElementById('txDate');
 txDateInput.value = new Date().toISOString().slice(0,10);
 
 document.getElementById('txCategoryFilterSelect').addEventListener('change', ()=>{ txCurrentPage = 1; renderTransactions(); });
+document.getElementById('txAccountFilterSelect').addEventListener('change', ()=>{ txCurrentPage = 1; renderTransactions(); });
 document.getElementById('txPeriodSelect').addEventListener('change', ()=>{ txCurrentPage = 1; renderTransactions(); });
 
 document.getElementById('plMonthSelect').addEventListener('change', renderPL);
