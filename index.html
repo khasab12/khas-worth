@@ -962,7 +962,7 @@
         <div class="ledger-head">
           <h2>Full Backup</h2>
         </div>
-        <p class="backup-note">Includes: accounts, snapshots, transactions, dividends, budgets, category groups &amp; categories, asset &amp; liability classes.</p>
+        <p class="backup-note">Includes: Treasury accounts, snapshots, transactions, dividends, budgets, category groups &amp; categories, asset &amp; liability classes, and Ledger accounts.</p>
         <div class="backup-actions">
           <button class="backup-btn" id="fullBackupBtn">Download backup</button>
           <button class="backup-btn restore" id="fullRestoreBtn">Restore backup</button>
@@ -1526,7 +1526,7 @@ function renderLedgerAccountList(containerId, type){
       </div>
     `;
   }).join('');
-  container.querySelector('.settings-account-class-select') && rows.forEach(acc=>{
+  rows.forEach(acc=>{
     const sel = container.querySelector(`select[data-id="${acc.id}"]`);
     if(sel) sel.value = acc.class;
   });
@@ -2534,6 +2534,7 @@ function render(){
   renderInvestmentTab();
   renderSettings();
   renderAccountClassLists();
+  renderSettingsAccounts();
   populateTxAccountSelect();
   renderTransactions();
   renderPL();
@@ -3492,6 +3493,24 @@ document.getElementById('addLiabilityClassBtn').addEventListener('click', async 
   render();
 });
 
+document.getElementById('addAssetAccountBtn').addEventListener('click', async ()=>{
+  const name = prompt('New asset account name:');
+  if(!name || !name.trim()) return;
+  const defaultClass = assetClasses.length ? assetClasses[0].name : '';
+  ledgerAccounts.push({ id: uid('la'), name: name.trim(), type:'asset', class: defaultClass, openingBalance: 0 });
+  await saveLedgerAccounts();
+  render();
+});
+
+document.getElementById('addLiabilityAccountBtn').addEventListener('click', async ()=>{
+  const name = prompt('New liability account name:');
+  if(!name || !name.trim()) return;
+  const defaultClass = liabilityClasses.length ? liabilityClasses[0].name : '';
+  ledgerAccounts.push({ id: uid('la'), name: name.trim(), type:'liability', class: defaultClass, openingBalance: 0 });
+  await saveLedgerAccounts();
+  render();
+});
+
 document.querySelectorAll('.settings-subnav-btn').forEach(btn=>{
   btn.addEventListener('click', ()=>{
     document.querySelectorAll('.settings-subnav-btn').forEach(b=>b.classList.remove('active'));
@@ -3515,7 +3534,8 @@ document.getElementById('fullBackupBtn').addEventListener('click', ()=>{
     categoryGroups,
     categories,
     assetClasses,
-    liabilityClasses
+    liabilityClasses,
+    ledgerAccounts
   };
   const blob = new Blob([JSON.stringify(backup, null, 2)], {type:'application/json'});
   const url = URL.createObjectURL(blob);
@@ -3558,6 +3578,9 @@ document.getElementById('fullBackupFileInput').addEventListener('change', (e)=>{
         assetClasses = data.assetClasses;
         liabilityClasses = data.liabilityClasses;
       }
+      if(Array.isArray(data.ledgerAccounts)){
+        ledgerAccounts = data.ledgerAccounts;
+      }
 
       await saveAccounts();
       await saveSnapshots();
@@ -3568,6 +3591,7 @@ document.getElementById('fullBackupFileInput').addEventListener('change', (e)=>{
       await saveCategories();
       await saveAssetClasses();
       await saveLiabilityClasses();
+      await saveLedgerAccounts();
 
       render();
       alert('Backup restored.');
