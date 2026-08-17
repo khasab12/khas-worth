@@ -584,7 +584,9 @@
     padding:12px 0;border-top:1px solid var(--line);border-bottom:1px solid var(--line);
     margin-bottom:18px;
   }
+  .modal-balance-row + .modal-balance-row{border-top:none;margin-top:-18px;}
   .modal-balance-label{font-size:13px;color:var(--text-muted);}
+  .modal-balance-hint{font-size:10.5px;color:var(--text-muted);opacity:0.7;}
   .modal-balance-input{
     font-family:'IBM Plex Mono', monospace;font-size:17px;font-variant-numeric:tabular-nums;
     background:transparent;border:none;color:var(--text);text-align:right;width:130px;
@@ -786,7 +788,7 @@
       </div>
     </section>
 
-    <p class="settings-note">Balances here are calculated purely from your Transactions (income adds, expenses subtract) — separate from the manual balances you set in Treasury. If you haven't logged every transaction since an account was opened, these numbers won't match Treasury.</p>
+    <p class="settings-note">Balances here = each account's opening balance (set in Treasury → tap account) plus everything logged in Transactions (income adds, expenses subtract) — separate from the manual balances you set directly in Treasury.</p>
 
     <section class="ledger assets">
       <div class="ledger-head">
@@ -1013,6 +1015,11 @@
     <div class="modal-balance-row">
       <span class="modal-balance-label">Current balance</span>
       <input type="number" id="modalBalanceInput" class="modal-balance-input" inputmode="decimal" />
+    </div>
+
+    <div class="modal-balance-row">
+      <span class="modal-balance-label">Opening balance <span class="modal-balance-hint">(for Ledger)</span></span>
+      <input type="number" id="modalOpeningBalanceInput" class="modal-balance-input" inputmode="decimal" />
     </div>
 
     <div class="mini-chart-wrap">
@@ -1834,9 +1841,12 @@ function populateAccountCategorySelects(){
 }
 
 function computeLedgerBalance(accountId){
-  return transactions
+  const acc = accounts.find(a=>a.id===accountId);
+  const opening = acc ? Number(acc.openingBalance||0) : 0;
+  const txSum = transactions
     .filter(t=>t.accountId===accountId)
     .reduce((s,t)=> s + (t.type==='income' ? Number(t.amount||0) : -Number(t.amount||0)), 0);
+  return opening + txSum;
 }
 
 function renderLedgerSection(type, containerId, totalId){
@@ -2139,6 +2149,7 @@ function renderAccountModal(){
 
   document.getElementById('modalTypeLabel').textContent = acc.type==='asset' ? 'Asset' : 'Liability';
   document.getElementById('modalBalanceInput').value = acc.balance;
+  document.getElementById('modalOpeningBalanceInput').value = acc.openingBalance || 0;
 
   renderModalChart(acc);
   renderModalHistory(acc);
@@ -2829,6 +2840,16 @@ document.getElementById('modalBalanceInput').addEventListener('change', async (e
   const acc = accounts.find(a=>a.id===currentModalAccountId);
   if(acc){
     acc.balance = Number(e.target.value) || 0;
+    await saveAccounts();
+    render();
+    renderAccountModal();
+  }
+});
+
+document.getElementById('modalOpeningBalanceInput').addEventListener('change', async (e)=>{
+  const acc = accounts.find(a=>a.id===currentModalAccountId);
+  if(acc){
+    acc.openingBalance = Number(e.target.value) || 0;
     await saveAccounts();
     render();
     renderAccountModal();
