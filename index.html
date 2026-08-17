@@ -772,19 +772,7 @@
       <button class="snapshot-btn secondary" id="loadBtn">Load</button>
     </section>
 
-    <section class="backup-section">
-      <div class="ledger-head">
-        <h2>Backup &amp; Restore</h2>
-      </div>
-      <p class="backup-note">Save a full backup (all accounts and history) so you can restore everything if you switch devices or clear your browser data.</p>
-      <div class="backup-actions">
-        <button class="backup-btn" id="backupBtn">Download backup</button>
-        <button class="backup-btn restore" id="restoreBtn">Restore backup</button>
-      </div>
-      <input type="file" id="jsonFileInput" accept=".json,application/json" style="display:none" />
-    </section>
-
-    <footer class="note">Stored privately on this device, only visible to you.<br/>Add this page to your Home Screen for one-tap access.</footer>
+    <footer class="note">Stored privately on this device, only visible to you.<br/>Full backup &amp; restore has moved to Settings → Backup.<br/>Add this page to your Home Screen for one-tap access.</footer>
 
   </div>
 
@@ -900,8 +888,29 @@
   <div class="tab-panel" id="tabSettings" style="display:none;">
 
     <div class="settings-subnav">
+      <button class="settings-subnav-btn" id="subnavBackup" data-subpanel="settingsPanelBackup">Backup</button>
       <button class="settings-subnav-btn active" id="subnavCategories" data-subpanel="settingsPanelCategories">Categories</button>
       <button class="settings-subnav-btn" id="subnavAccountClasses" data-subpanel="settingsPanelAccountClasses">Account Classes</button>
+    </div>
+
+    <div class="settings-subpanel" id="settingsPanelBackup" style="display:none;">
+
+      <section class="settings-intro">
+        <p class="settings-note">Download a complete backup of everything stored in this app — accounts, snapshot history, transactions, dividends, budgets, and your category/account-class setup. Keep it somewhere safe so you can restore everything if you switch phones, clear your browser data, or something goes wrong.</p>
+      </section>
+
+      <section class="backup-section">
+        <div class="ledger-head">
+          <h2>Full Backup</h2>
+        </div>
+        <p class="backup-note">Includes: accounts, snapshots, transactions, dividends, budgets, category groups &amp; categories, asset &amp; liability classes.</p>
+        <div class="backup-actions">
+          <button class="backup-btn" id="fullBackupBtn">Download backup</button>
+          <button class="backup-btn restore" id="fullRestoreBtn">Restore backup</button>
+        </div>
+        <input type="file" id="fullBackupFileInput" accept=".json,application/json" style="display:none" />
+      </section>
+
     </div>
 
     <div class="settings-subpanel" id="settingsPanelCategories">
@@ -2703,50 +2712,7 @@ document.getElementById('csvFileInput').addEventListener('change', (e)=>{
   reader.readAsText(file);
 });
 
-// --- Full backup (JSON) ---
-document.getElementById('backupBtn').addEventListener('click', ()=>{
-  const backup = { accounts, snapshots, exportedAt: new Date().toISOString() };
-  const blob = new Blob([JSON.stringify(backup, null, 2)], {type:'application/json'});
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = 'net-worth-backup.json';
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  URL.revokeObjectURL(url);
-});
-
-document.getElementById('restoreBtn').addEventListener('click', ()=>{
-  document.getElementById('jsonFileInput').click();
-});
-document.getElementById('jsonFileInput').addEventListener('change', (e)=>{
-  const file = e.target.files[0];
-  if(!file) return;
-  const reader = new FileReader();
-  reader.onload = async (evt)=>{
-    try{
-      const data = JSON.parse(evt.target.result);
-      if(!Array.isArray(data.accounts) || !Array.isArray(data.snapshots)){
-        alert('This file doesn\'t look like a valid backup.');
-        return;
-      }
-      const confirmed = confirm('This will replace all current accounts and history with the backup. Continue?');
-      if(!confirmed) return;
-      accounts = data.accounts;
-      snapshots = data.snapshots;
-      await saveAccounts();
-      await saveSnapshots();
-      render();
-      alert('Backup restored.');
-    }catch(err){
-      console.error(err);
-      alert('Could not read that backup file.');
-    }
-    e.target.value = '';
-  };
-  reader.readAsText(file);
-});
+// --- Full backup (JSON) moved to Settings > Backup, see below ---
 
 document.getElementById('modalCloseBtn').addEventListener('click', closeAccountModal);
 document.getElementById('accountModalOverlay').addEventListener('click', (e)=>{
@@ -3273,6 +3239,85 @@ document.querySelectorAll('.settings-subnav-btn').forEach(btn=>{
     btn.classList.add('active');
     document.getElementById(btn.dataset.subpanel).style.display = 'block';
   });
+});
+
+// --- Full app backup (everything) ---
+document.getElementById('fullBackupBtn').addEventListener('click', ()=>{
+  const backup = {
+    kind: 'kassensturz-full-backup',
+    version: 1,
+    exportedAt: new Date().toISOString(),
+    accounts,
+    snapshots,
+    transactions,
+    dividends,
+    budgets,
+    categoryGroups,
+    categories,
+    assetClasses,
+    liabilityClasses
+  };
+  const blob = new Blob([JSON.stringify(backup, null, 2)], {type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `kassensturz-backup-${new Date().toISOString().slice(0,10)}.json`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+});
+
+document.getElementById('fullRestoreBtn').addEventListener('click', ()=>{
+  document.getElementById('fullBackupFileInput').click();
+});
+document.getElementById('fullBackupFileInput').addEventListener('change', (e)=>{
+  const file = e.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = async (evt)=>{
+    try{
+      const data = JSON.parse(evt.target.result);
+      const hasCore = Array.isArray(data.accounts) && Array.isArray(data.snapshots);
+      if(!hasCore){
+        alert('This file doesn\'t look like a valid backup.');
+        return;
+      }
+      if(!confirm('This will replace ALL current data (accounts, snapshots, transactions, dividends, budgets, categories, and account classes) with the backup. This can\'t be undone. Continue?')) return;
+
+      accounts = Array.isArray(data.accounts) ? data.accounts : [];
+      snapshots = Array.isArray(data.snapshots) ? data.snapshots : [];
+      transactions = Array.isArray(data.transactions) ? data.transactions : [];
+      dividends = Array.isArray(data.dividends) ? data.dividends : [];
+      budgets = Array.isArray(data.budgets) ? data.budgets : [];
+      if(Array.isArray(data.categoryGroups) && Array.isArray(data.categories)){
+        categoryGroups = data.categoryGroups;
+        categories = data.categories;
+      }
+      if(Array.isArray(data.assetClasses) && Array.isArray(data.liabilityClasses)){
+        assetClasses = data.assetClasses;
+        liabilityClasses = data.liabilityClasses;
+      }
+
+      await saveAccounts();
+      await saveSnapshots();
+      await saveTransactions();
+      await saveDividends();
+      await saveBudgets();
+      await saveCategoryGroups();
+      await saveCategories();
+      await saveAssetClasses();
+      await saveLiabilityClasses();
+
+      render();
+      alert('Backup restored.');
+    }catch(err){
+      console.error(err);
+      alert('Could not read that backup file.');
+    }
+    e.target.value = '';
+  };
+  reader.readAsText(file);
 });
 
 loadData();
