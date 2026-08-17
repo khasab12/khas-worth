@@ -1497,6 +1497,78 @@ function renderAccountClassLists(){
   renderClassList('settingsLiabilityClassList', liabilityClasses, saveLiabilityClasses);
 }
 
+function renderLedgerAccountList(containerId, type){
+  const container = document.getElementById(containerId);
+  const rows = ledgerAccounts.filter(a=>a.type===type);
+  const classOptions = type==='asset' ? assetClasses : liabilityClasses;
+
+  if(rows.length===0){
+    container.innerHTML = `<div class="empty">No ${type==='asset'?'asset':'liability'} accounts yet.</div>`;
+    return;
+  }
+
+  container.innerHTML = rows.map(acc=>{
+    let classOptsHtml = classOptions.map(c=>`<option value="${escapeHtml(c.name)}">${escapeHtml(c.name)}</option>`).join('');
+    if(!classOptions.some(c=>c.name===acc.class)){
+      classOptsHtml += `<option value="${escapeHtml(acc.class||'')}">${escapeHtml(acc.class||'(none)')}</option>`;
+    }
+    return `
+      <div class="settings-account-card">
+        <div class="settings-account-row1">
+          <input type="text" class="settings-account-name" value="${escapeHtml(acc.name)}" data-id="${acc.id}" data-field="name" />
+          <button class="settings-icon-btn danger" data-id="${acc.id}" data-action="delete-account" aria-label="Delete account">🗑</button>
+        </div>
+        <div class="settings-account-row2">
+          <select class="settings-account-class-select" data-id="${acc.id}" data-field="class">${classOptsHtml}</select>
+          <span class="settings-account-opening-label">Opening</span>
+          <input type="number" class="settings-account-opening-input" inputmode="decimal" value="${acc.openingBalance||0}" data-id="${acc.id}" data-field="openingBalance" />
+        </div>
+      </div>
+    `;
+  }).join('');
+  container.querySelector('.settings-account-class-select') && rows.forEach(acc=>{
+    const sel = container.querySelector(`select[data-id="${acc.id}"]`);
+    if(sel) sel.value = acc.class;
+  });
+
+  container.querySelectorAll('[data-field]').forEach(el=>{
+    const evt = el.tagName==='SELECT' ? 'change' : 'change';
+    el.addEventListener(evt, async (e)=>{
+      const id = e.target.dataset.id;
+      const field = e.target.dataset.field;
+      const acc = ledgerAccounts.find(a=>a.id===id);
+      if(!acc) return;
+      if(field==='name'){
+        const newName = e.target.value.trim();
+        if(newName){ acc.name = newName; } else { e.target.value = acc.name; return; }
+      } else if(field==='class'){
+        acc.class = e.target.value;
+      } else if(field==='openingBalance'){
+        acc.openingBalance = Number(e.target.value) || 0;
+      }
+      await saveLedgerAccounts();
+      render();
+    });
+  });
+
+  container.querySelectorAll('[data-action="delete-account"]').forEach(btn=>{
+    btn.addEventListener('click', async (e)=>{
+      const id = e.currentTarget.dataset.id;
+      const acc = ledgerAccounts.find(a=>a.id===id);
+      if(!acc) return;
+      if(!confirm(`Delete account "${acc.name}"? Transactions already linked to it will keep showing its old name, but won't count toward any account balance anymore. This can't be undone.`)) return;
+      ledgerAccounts = ledgerAccounts.filter(a=>a.id!==id);
+      await saveLedgerAccounts();
+      render();
+    });
+  });
+}
+
+function renderSettingsAccounts(){
+  renderLedgerAccountList('settingsAssetAccountList', 'asset');
+  renderLedgerAccountList('settingsLiabilityAccountList', 'liability');
+}
+
 function renderInvestmentTab(){
   const investmentAccounts = accounts.filter(a=> a.type==='asset' && a.category==='Depot');
   const total = investmentAccounts.reduce((s,a)=> s + Number(a.balance||0), 0);
