@@ -124,6 +124,7 @@
     display:block;width:100%;
   }
   .row .name-btn .name{font-size:12.5px;font-weight:400;color:var(--text);}
+  .row .meta .name{font-size:12.5px;font-weight:400;color:var(--text);}
   .row .name-btn:hover .name{color:var(--gold);}
   .row .cat{font-family:'IBM Plex Mono', monospace;font-size:9px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.05em;margin-top:1px;}
   .row .right{display:flex;align-items:center;gap:6px;flex-shrink:0;}
@@ -776,6 +777,35 @@
 
   </div>
 
+  <div class="tab-panel" id="tabLedger" style="display:none;">
+
+    <section class="tx-summary">
+      <div class="tx-summary-item">
+        <div class="tx-summary-label">Ledger Net Worth</div>
+        <div class="tx-summary-value" id="ledgerNetWorthFigure">0,00</div>
+      </div>
+    </section>
+
+    <p class="settings-note">Balances here are calculated purely from your Transactions (income adds, expenses subtract) — separate from the manual balances you set in Treasury. If you haven't logged every transaction since an account was opened, these numbers won't match Treasury.</p>
+
+    <section class="ledger assets">
+      <div class="ledger-head">
+        <h2>Assets</h2>
+        <div class="total" id="ledgerAssetsTotal">0,00</div>
+      </div>
+      <div class="rows" id="ledgerAssetsRows"></div>
+    </section>
+
+    <section class="ledger liabilities">
+      <div class="ledger-head">
+        <h2>Liabilities</h2>
+        <div class="total" id="ledgerLiabilitiesTotal">0,00</div>
+      </div>
+      <div class="rows" id="ledgerLiabilitiesRows"></div>
+    </section>
+
+  </div>
+
   <div class="tab-panel" id="tabDividends" style="display:none;">
 
     <section class="hero">
@@ -962,6 +992,7 @@
   <button class="nav-btn active" id="navTransactions" data-tab="tabTransactions">Transactions</button>
   <button class="nav-btn" id="navPL" data-tab="tabPL">P&amp;L</button>
   <button class="nav-btn" id="navNetWorth" data-tab="tabNetWorth">Treasury</button>
+  <button class="nav-btn" id="navLedger" data-tab="tabLedger">Ledger</button>
   <button class="nav-btn" id="navDividends" data-tab="tabDividends" style="display:none;">Dividends</button>
   <button class="nav-btn" id="navVisualization" data-tab="tabVisualization" style="display:none;">Visualization</button>
   <button class="nav-btn" id="navInvestment" data-tab="tabInvestment" style="display:none;">Investment</button>
@@ -1802,6 +1833,67 @@ function populateAccountCategorySelects(){
   if(prevLiab && liabilityClasses.some(c=>c.name===prevLiab)){ liabSel.value = prevLiab; }
 }
 
+function computeLedgerBalance(accountId){
+  return transactions
+    .filter(t=>t.accountId===accountId)
+    .reduce((s,t)=> s + (t.type==='income' ? Number(t.amount||0) : -Number(t.amount||0)), 0);
+}
+
+function renderLedgerSection(type, containerId, totalId){
+  const container = document.getElementById(containerId);
+  const rows = accounts.filter(a=>a.type===type);
+  if(rows.length===0){
+    container.innerHTML = `<div class="empty">No ${type==='asset'?'assets':'liabilities'} yet — add one in the Treasury tab.</div>`;
+    document.getElementById(totalId).textContent = fmtPlain(0);
+    return 0;
+  }
+
+  const orderedClasses = (type==='asset' ? assetClasses : liabilityClasses).map(c=>c.name);
+  const presentCategories = [...new Set(rows.map(a=>a.category))];
+  const categoryOrder = [
+    ...orderedClasses.filter(c=> presentCategories.includes(c)),
+    ...presentCategories.filter(c=> !orderedClasses.includes(c))
+  ];
+
+  let sectionTotal = 0;
+  container.innerHTML = '';
+  categoryOrder.forEach(cat=>{
+    const catRows = rows.filter(a=>a.category===cat);
+    if(catRows.length===0) return;
+    let catTotal = 0;
+
+    const groupEl = document.createElement('div');
+    groupEl.className = 'cat-group';
+    const rowsHtml = catRows.map(acc=>{
+      const bal = computeLedgerBalance(acc.id);
+      catTotal += bal;
+      sectionTotal += bal;
+      return `<div class="row">
+        <div class="meta"><span class="name">${escapeHtml(acc.name)}</span></div>
+        <div class="right"><span class="balance-static">${fmtPlain(bal)}</span></div>
+      </div>`;
+    }).join('');
+
+    groupEl.innerHTML = `
+      <div class="cat-group-head">
+        <span class="cat-group-name">${escapeHtml(cat)}</span>
+        <span class="cat-group-total">${fmtPlain(catTotal)}</span>
+      </div>
+      <div class="rows">${rowsHtml}</div>
+    `;
+    container.appendChild(groupEl);
+  });
+
+  document.getElementById(totalId).textContent = fmtPlain(sectionTotal);
+  return sectionTotal;
+}
+
+function renderLedgerTab(){
+  const assetsTotal = renderLedgerSection('asset', 'ledgerAssetsRows', 'ledgerAssetsTotal');
+  const liabTotal = renderLedgerSection('liability', 'ledgerLiabilitiesRows', 'ledgerLiabilitiesTotal');
+  document.getElementById('ledgerNetWorthFigure').textContent = fmtPlain(assetsTotal - liabTotal);
+}
+
 function renderRows(type, containerId){
   const container = document.getElementById(containerId);
   const rows = accounts.filter(a=>a.type===type);
@@ -2275,6 +2367,7 @@ function render(){
   populateAccountCategorySelects();
   renderRows('asset','assetsRows');
   renderRows('liability','liabilitiesRows');
+  renderLedgerTab();
   renderChart();
   renderMiniChart('netWorthOnlyChart', 'netWorth', '#EDE6D6');
   renderMiniChart('assetsChart', 'assetsTotal', '#C9A15C');
