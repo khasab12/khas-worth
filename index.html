@@ -1598,6 +1598,7 @@ function renderTransactions(){
       await saveTransactions();
       renderTransactions();
       renderPL();
+      renderLedgerTab();
     });
   });
 
@@ -2393,6 +2394,7 @@ function render(){
   populateTxAccountSelect();
   renderTransactions();
   renderPL();
+  renderLedgerTab();
   renderDividends();
 
   const btn = document.getElementById('snapshotBtn');
@@ -2944,6 +2946,7 @@ document.getElementById('txSave').addEventListener('click', async ()=>{
   txCurrentPage = 1;
   renderTransactions();
   renderPL();
+  renderLedgerTab();
 });
 
 document.getElementById('txExportBtn').addEventListener('click', ()=>{
@@ -2980,6 +2983,7 @@ document.getElementById('txDeleteAllBtn').addEventListener('click', async ()=>{
   await saveTransactions();
   renderTransactions();
   renderPL();
+  renderLedgerTab();
 });
 document.getElementById('txCsvFileInput').addEventListener('change', (e)=>{
   const file = e.target.files[0];
@@ -3041,6 +3045,7 @@ document.getElementById('txCsvFileInput').addEventListener('change', (e)=>{
       txCurrentPage = 1;
       renderTransactions();
       renderPL();
+      renderLedgerTab();
       alert(`Imported ${imported} transaction${imported===1?'':'s'}.` + (skipped>0 ? ` Skipped ${skipped} invalid row${skipped===1?'':'s'}.` : ''));
     }catch(err){
       console.error(err);
@@ -3162,6 +3167,7 @@ document.getElementById('txModalName').addEventListener('change', async (e)=>{
     await saveTransactions();
     renderTransactions();
     renderPL();
+    renderLedgerTab();
   } else if(t){
     e.target.value = t.name;
   }
@@ -3183,6 +3189,7 @@ document.getElementById('txModalDate').addEventListener('change', async (e)=>{
     await saveTransactions();
     renderTransactions();
     renderPL();
+    renderLedgerTab();
   }
 });
 
@@ -3196,6 +3203,7 @@ document.querySelectorAll('#txModalSignToggle .sign-btn').forEach(btn=>{
       await saveTransactions();
       renderTransactions();
       renderPL();
+      renderLedgerTab();
     }
   });
 });
@@ -3209,6 +3217,7 @@ document.getElementById('txModalAccount').addEventListener('change', async (e)=>
     await saveTransactions();
     renderTransactions();
     renderPL();
+    renderLedgerTab();
   }
 });
 
@@ -3219,6 +3228,7 @@ document.getElementById('txModalCategory').addEventListener('change', async (e)=
     await saveTransactions();
     renderTransactions();
     renderPL();
+    renderLedgerTab();
   }
 });
 
@@ -3231,6 +3241,7 @@ document.getElementById('txModalAmount').addEventListener('change', async (e)=>{
     await saveTransactions();
     renderTransactions();
     renderPL();
+    renderLedgerTab();
   }
 });
 
@@ -3243,6 +3254,7 @@ document.getElementById('txModalDeleteBtn').addEventListener('click', async ()=>
   closeTxModal();
   renderTransactions();
   renderPL();
+  renderLedgerTab();
 });
 
 document.getElementById('budgetExportBtn').addEventListener('click', ()=>{
