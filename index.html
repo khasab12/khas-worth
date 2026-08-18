@@ -3138,11 +3138,12 @@ document.getElementById('txSave').addEventListener('click', async ()=>{
 document.getElementById('txExportBtn').addEventListener('click', ()=>{
   if(transactions.length===0){ alert('No transactions yet to export.'); return; }
   const sorted = [...transactions].sort((a,b)=> new Date(a.date) - new Date(b.date));
-  const header = ['Date','Name','Reference','Type','Account','Category','Amount'];
+  const header = ['Date','Name','Reference','Account','Category','Amount'];
   const rows = sorted.map(t=>{
     const acc = ledgerAccounts.find(a=>a.id===t.accountId);
     const accLabel = acc ? acc.name : (t.accountName || '');
-    return [t.date, t.name, t.reference || '', t.type==='income'?'Income':'Expense', accLabel, t.category, t.amount.toFixed(2)]
+    const signedAmount = t.type==='income' ? t.amount : -t.amount;
+    return [t.date, t.name, t.reference || '', accLabel, t.category, signedAmount.toFixed(2)]
       .map(csvField).join(',');
   });
   const csv = [header.map(csvField).join(','), ...rows].join('\n');
@@ -3186,7 +3187,7 @@ document.getElementById('txCsvFileInput').addEventListener('change', (e)=>{
       const headerLooksValid = headerCells.some(h=> norm(h)==='date') && headerCells.some(h=> norm(h)==='amount');
       const dataLines = headerLooksValid ? lines.slice(1) : lines;
 
-      let dateIdx=0, nameIdx=1, referenceIdx=-1, typeIdx=2, accountIdx=3, categoryIdx=4, amountIdx=5;
+      let dateIdx=0, nameIdx=1, referenceIdx=-1, typeIdx=-1, accountIdx=2, categoryIdx=3, amountIdx=4;
       if(headerLooksValid){
         headerCells.forEach((h,i)=>{
           const n = norm(h);
@@ -3203,18 +3204,25 @@ document.getElementById('txCsvFileInput').addEventListener('change', (e)=>{
       let imported = 0, skipped = 0;
       dataLines.forEach(line=>{
         const parts = parseCsvLine(line);
-        if(parts.length <= Math.max(dateIdx,nameIdx,typeIdx,accountIdx,categoryIdx,amountIdx)){ skipped++; return; }
+        if(parts.length <= Math.max(dateIdx,nameIdx,accountIdx,categoryIdx,amountIdx)){ skipped++; return; }
         const dateVal = parts[dateIdx];
         const d = new Date(dateVal + 'T12:00:00');
         if(isNaN(d.getTime())){ skipped++; return; }
         const name = parts[nameIdx] || 'Transaction';
         const reference = referenceIdx>-1 ? (parts[referenceIdx] || '') : '';
-        const typeRaw = (parts[typeIdx]||'').toLowerCase();
-        const type = typeRaw.startsWith('inc') ? 'income' : 'expense';
         const accountName = parts[accountIdx] || '';
         const category = parts[categoryIdx] || 'Other';
-        const amount = Math.abs(Number(parts[amountIdx]) || 0);
-        if(amount <= 0){ skipped++; return; }
+        const rawAmount = Number(parts[amountIdx]) || 0;
+        if(rawAmount === 0){ skipped++; return; }
+
+        // Prefer the sign of Amount; fall back to an old Type column if present (for older exports)
+        let type;
+        if(typeIdx>-1 && parts[typeIdx]){
+          type = (parts[typeIdx]||'').toLowerCase().startsWith('inc') ? 'income' : 'expense';
+        } else {
+          type = rawAmount > 0 ? 'income' : 'expense';
+        }
+        const amount = Math.abs(rawAmount);
 
         const match = ledgerAccounts.find(a=> a.name.toLowerCase() === accountName.toLowerCase());
         transactions.push({
@@ -3235,7 +3243,7 @@ document.getElementById('txCsvFileInput').addEventListener('change', (e)=>{
       alert(`Imported ${imported} transaction${imported===1?'':'s'}.` + (skipped>0 ? ` Skipped ${skipped} invalid row${skipped===1?'':'s'}.` : ''));
     }catch(err){
       console.error(err);
-      alert('Could not read that CSV file. Expected columns: Date, Name, Type, Account, Category, Amount.');
+      alert('Could not read that CSV file. Expected columns: Date, Name, Account, Category, Amount (positive = income, negative = expense).');
     }
     e.target.value = '';
   };
