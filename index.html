@@ -284,6 +284,34 @@
   .backup-btn:hover{filter:brightness(0.95);}
   .backup-btn.restore{background:transparent;color:var(--text);border:1px solid var(--line-strong);}
   .backup-btn.restore:hover{border-color:var(--gold-dim);}
+  .danger-section{border-color:var(--burgundy-dim);}
+  .backup-btn.delete-all-btn{
+    background:var(--burgundy);color:#FFFFFF;width:100%;
+  }
+  .backup-btn.delete-all-btn:hover{background:var(--burgundy-dim);}
+
+  .delete-confirm-overlay{
+    display:none;position:fixed;inset:0;background:rgba(6,10,16,0.72);
+    z-index:110;align-items:center;justify-content:center;padding:20px;
+  }
+  .delete-confirm-overlay.open{display:flex;}
+  .delete-confirm-panel{
+    background:var(--ink-800);border:1px solid var(--burgundy-dim);border-radius:14px;
+    padding:22px;width:100%;max-width:400px;
+  }
+  .delete-confirm-panel h3{
+    font-family:'Fraunces', serif;font-weight:500;font-size:17px;margin:0 0 10px;color:var(--text);
+  }
+  .delete-confirm-panel p{
+    font-size:12.5px;color:var(--text-muted);line-height:1.6;margin:0 0 16px;
+  }
+  .delete-confirm-panel input{
+    width:100%;background:var(--ink-700);border:1px solid var(--burgundy-dim);color:var(--text);
+    font-family:'IBM Plex Mono', monospace;font-size:14px;padding:10px 12px;border-radius:8px;
+    box-sizing:border-box;margin-bottom:14px;
+  }
+  .delete-confirm-actions{display:flex;gap:8px;}
+  .delete-confirm-actions button{flex:1;}
 
   footer.note{
     text-align:center;color:var(--text-muted);font-size:11px;margin-top:8px;line-height:1.6;
@@ -970,6 +998,16 @@
         <input type="file" id="fullBackupFileInput" accept=".json,application/json" style="display:none" />
       </section>
 
+      <section class="backup-section danger-section">
+        <div class="ledger-head">
+          <h2>Delete Data</h2>
+        </div>
+        <p class="backup-note">Permanently wipes everything stored in this app — Treasury accounts, snapshots, transactions, dividends, budgets, categories, account classes, and Ledger accounts. This can't be undone. Download a backup first if you might want any of this later.</p>
+        <div class="backup-actions">
+          <button class="backup-btn delete-all-btn" id="deleteAllDataBtn">Delete All Data</button>
+        </div>
+      </section>
+
     </div>
 
     <div class="settings-subpanel" id="settingsPanelCategories">
@@ -1105,6 +1143,18 @@
       </div>
     </div>
     <button class="backup-btn restore tx-modal-delete" id="txModalDeleteBtn">Delete transaction</button>
+  </div>
+</div>
+
+<div class="delete-confirm-overlay" id="deleteConfirmOverlay">
+  <div class="delete-confirm-panel">
+    <h3>Delete all data?</h3>
+    <p>This permanently wipes Treasury accounts, snapshots, transactions, dividends, budgets, categories, account classes, and Ledger accounts from this device. This can't be undone.<br/><br/>Type <strong>DELETE</strong> below to confirm.</p>
+    <input type="text" id="deleteConfirmInput" placeholder="Type DELETE" autocapitalize="off" autocomplete="off" />
+    <div class="delete-confirm-actions">
+      <button class="backup-btn restore" id="deleteConfirmCancelBtn">Cancel</button>
+      <button class="backup-btn delete-all-btn" id="deleteConfirmSubmitBtn" disabled>Delete Everything</button>
+    </div>
   </div>
 </div>
 
@@ -1715,7 +1765,7 @@ function renderTransactions(){
     const acc = ledgerAccounts.find(a=>a.id===t.accountId);
     const accLabel = acc ? acc.name : (t.accountName || 'Deleted account');
     const d = new Date(t.date + 'T12:00:00');
-    const dstr = d.toLocaleDateString('de-DE', {month:'short', day:'numeric', year:'numeric'});
+    const dstr = d.toLocaleDateString('de-DE', {day:'2-digit', month:'2-digit', year:'2-digit'});
     const refPart = t.reference ? ` · ${escapeHtml(t.reference)}` : '';
     const row = document.createElement('div');
     row.className = 'tx-row';
@@ -3603,6 +3653,54 @@ document.getElementById('fullBackupFileInput').addEventListener('change', (e)=>{
     e.target.value = '';
   };
   reader.readAsText(file);
+});
+
+document.getElementById('deleteAllDataBtn').addEventListener('click', ()=>{
+  document.getElementById('deleteConfirmInput').value = '';
+  document.getElementById('deleteConfirmSubmitBtn').disabled = true;
+  document.getElementById('deleteConfirmOverlay').classList.add('open');
+});
+
+document.getElementById('deleteConfirmCancelBtn').addEventListener('click', ()=>{
+  document.getElementById('deleteConfirmOverlay').classList.remove('open');
+});
+
+document.getElementById('deleteConfirmOverlay').addEventListener('click', (e)=>{
+  if(e.target.id === 'deleteConfirmOverlay') document.getElementById('deleteConfirmOverlay').classList.remove('open');
+});
+
+document.getElementById('deleteConfirmInput').addEventListener('input', (e)=>{
+  document.getElementById('deleteConfirmSubmitBtn').disabled = e.target.value.trim() !== 'DELETE';
+});
+
+document.getElementById('deleteConfirmSubmitBtn').addEventListener('click', async ()=>{
+  if(document.getElementById('deleteConfirmInput').value.trim() !== 'DELETE') return;
+
+  const keys = [
+    'ledger_accounts','ledger_snapshots','ledger_transactions','ledger_dividends','ledger_budgets',
+    'ledger_categoryGroups','ledger_categories','ledger_assetClasses','ledger_liabilityClasses',
+    'ledger_ledgerAccounts'
+  ];
+  keys.forEach(k=>{
+    try{ localStorage.removeItem(k); }catch(e){ console.error('remove failed', k, e); }
+  });
+
+  accounts = [];
+  snapshots = [];
+  transactions = [];
+  dividends = [];
+  budgets = [];
+  ledgerAccounts = [];
+  seedDefaultCategories();
+  seedDefaultAccountClasses();
+  await saveCategoryGroups();
+  await saveCategories();
+  await saveAssetClasses();
+  await saveLiabilityClasses();
+
+  document.getElementById('deleteConfirmOverlay').classList.remove('open');
+  render();
+  alert('All data has been deleted. Categories and account classes were reset to defaults.');
 });
 
 loadData();
