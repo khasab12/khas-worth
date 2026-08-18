@@ -385,8 +385,8 @@
     font-family:'IBM Plex Mono', monospace;font-size:14px;font-variant-numeric:tabular-nums;
     flex-shrink:0;
   }
-  .tx-row .tx-amount.income{color:var(--gold);}
-  .tx-row .tx-amount.expense{color:var(--burgundy);}
+  .tx-row .tx-amount.income{color:var(--money-green);}
+  .tx-row .tx-amount.expense{color:var(--money-red);}
 
   .tx-pagination{
     display:flex;align-items:center;justify-content:center;gap:14px;
@@ -2023,9 +2023,10 @@ function renderLedgerSection(type, containerId, totalId){
       const bal = computeLedgerBalance(acc.id);
       catTotal += bal;
       sectionTotal += bal;
+      const balColor = bal > 0 ? 'var(--money-green)' : (bal < 0 ? 'var(--money-red)' : 'var(--text)');
       return `<div class="row">
         <div class="meta"><span class="name">${escapeHtml(acc.name)}</span></div>
-        <div class="right"><span class="balance-static">${fmtPlain(bal)}</span></div>
+        <div class="right"><span class="balance-static" style="color:${balColor}">${fmtPlain(bal)}</span></div>
       </div>`;
     }).join('');
 
