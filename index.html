@@ -64,7 +64,7 @@
   }
 
   .chart-wrap{margin-bottom:22px;}
-  .chart{width:100%;height:150px;display:block;}
+  .chart{width:100%;height:210px;display:block;}
   .chart-labels{margin-top:8px;}
   .chart-legend{
     display:flex;gap:16px;flex-wrap:wrap;
@@ -193,7 +193,8 @@
     width:100%;background:var(--ink-700);border:1px solid var(--line);color:var(--text);
     font-family:'IBM Plex Sans', sans-serif;font-size:13.5px;padding:9px 10px;border-radius:7px;
   }
-  .account-history .mini-chart{height:100px;}
+  .account-history .mini-chart{height:140px;}
+  .mini-chart-section .mini-chart{height:120px;}
 
   /* Snapshot bar */
   .snapshot-bar{
@@ -911,7 +912,7 @@
         <h2>History Combined</h2>
       </div>
       <div class="chart-wrap">
-        <svg class="chart" id="chart" viewBox="0 0 320 160" preserveAspectRatio="none"></svg>
+        <svg class="chart" id="chart" viewBox="0 0 320 220" preserveAspectRatio="none"></svg>
         <div class="chart-labels" id="chartLabels"></div>
       </div>
     </section>
@@ -921,7 +922,7 @@
         <h2 class="mini-chart-title networth-title">Net Worth</h2>
       </div>
       <div class="mini-chart-wrap">
-        <svg class="mini-chart" id="netWorthOnlyChart" viewBox="0 0 320 90" preserveAspectRatio="none"></svg>
+        <svg class="mini-chart" id="netWorthOnlyChart" viewBox="0 0 320 130" preserveAspectRatio="none"></svg>
       </div>
     </section>
 
@@ -930,7 +931,7 @@
         <h2 class="mini-chart-title assets-title">Assets</h2>
       </div>
       <div class="mini-chart-wrap">
-        <svg class="mini-chart" id="assetsChart" viewBox="0 0 320 90" preserveAspectRatio="none"></svg>
+        <svg class="mini-chart" id="assetsChart" viewBox="0 0 320 130" preserveAspectRatio="none"></svg>
       </div>
     </section>
 
@@ -939,7 +940,7 @@
         <h2 class="mini-chart-title liabilities-title">Liabilities</h2>
       </div>
       <div class="mini-chart-wrap">
-        <svg class="mini-chart" id="liabilitiesChart" viewBox="0 0 320 90" preserveAspectRatio="none"></svg>
+        <svg class="mini-chart" id="liabilitiesChart" viewBox="0 0 320 130" preserveAspectRatio="none"></svg>
       </div>
     </section>
 
@@ -949,7 +950,7 @@
       </div>
       <select id="accountHistorySelect" class="account-select"></select>
       <div class="mini-chart-wrap">
-        <svg class="mini-chart" id="accountHistoryChart" viewBox="0 0 320 110" preserveAspectRatio="none"></svg>
+        <svg class="mini-chart" id="accountHistoryChart" viewBox="0 0 320 150" preserveAspectRatio="none"></svg>
       </div>
     </section>
 
@@ -1085,7 +1086,7 @@
   <button class="nav-btn" id="navNetWorth" data-tab="tabNetWorth">Treasury</button>
   <button class="nav-btn" id="navLedger" data-tab="tabLedger">Ledger</button>
   <button class="nav-btn" id="navDividends" data-tab="tabDividends" style="display:none;">Dividends</button>
-  <button class="nav-btn" id="navVisualization" data-tab="tabVisualization" style="display:none;">Visualization</button>
+  <button class="nav-btn" id="navVisualization" data-tab="tabVisualization">Visualization</button>
   <button class="nav-btn" id="navInvestment" data-tab="tabInvestment" style="display:none;">Investment</button>
   <button class="nav-btn" id="navSettings" data-tab="tabSettings">Settings</button>
 </nav>
@@ -1812,6 +1813,14 @@ function renderTransactions(){
   }
 }
 
+function computeGridSteps(min, max, step){
+  const start = Math.floor(min/step)*step;
+  const end = Math.ceil(max/step)*step;
+  const vals = [];
+  for(let v=end; v>=start-0.5; v-=step){ vals.push(v); }
+  return { vals, start, end };
+}
+
 function amtColorClass(n){
   return Math.abs(n) < 0.005 ? '' : (n > 0 ? 'amt-green' : 'amt-red');
 }
@@ -2173,13 +2182,15 @@ function renderChart(){
     return;
   }
 
-  const w = 320, h = 160, padL = 40, padR = 4, padT = 10, padB = 10;
+  const w = 320, h = 220, padL = 44, padR = 4, padT = 10, padB = 10;
   const netVals = sorted.map(s=>s.netWorth);
   const assetVals = sorted.map(s=>s.assetsTotal);
   const liabVals = sorted.map(s=>s.liabilitiesTotal);
   const allVals = [...netVals, ...assetVals, ...liabVals, 0];
-  const min = Math.min(...allVals);
-  const max = Math.max(...allVals);
+  const rawMin = Math.min(...allVals);
+  const rawMax = Math.max(...allVals);
+  const { vals: gridVals, start, end } = computeGridSteps(rawMin, rawMax, 5000);
+  const min = start, max = end;
   const range = (max - min) || 1;
 
   const xFor = (i)=> padL + (i/(sorted.length-1)) * (w - padL - padR);
@@ -2195,13 +2206,11 @@ function renderChart(){
 
   let grid = '';
   let axisLabels = '';
-  const guideCount = 4;
-  for(let i=0;i<=guideCount;i++){
-    const gy = padT + (i/guideCount) * (h - padT - padB);
-    const val = max - (i/guideCount) * range;
+  gridVals.forEach(val=>{
+    const gy = yFor(val);
     grid += `<line x1="${padL}" y1="${gy.toFixed(1)}" x2="${w-padR}" y2="${gy.toFixed(1)}" stroke="rgba(237,230,214,0.08)" stroke-width="1"/>`;
-    axisLabels += `<text x="${padL-6}" y="${(gy+3).toFixed(1)}" text-anchor="end" fill="#8F96A3" font-family="IBM Plex Mono, monospace" font-size="8.5">${fmtAxis(val)}</text>`;
-  }
+    axisLabels += `<text x="${padL-6}" y="${(gy+3).toFixed(1)}" text-anchor="end" fill="#8F96A3" font-family="IBM Plex Mono, monospace" font-size="9">${fmtAxis(val)}</text>`;
+  });
   if(min < 0 && max > 0){
     const zy = yFor(0);
     grid += `<line x1="${padL}" y1="${zy.toFixed(1)}" x2="${w-padR}" y2="${zy.toFixed(1)}" stroke="rgba(237,230,214,0.22)" stroke-width="1" stroke-dasharray="3,3"/>`;
@@ -2443,9 +2452,11 @@ function renderAccountHistoryChart(){
   const vals = sorted.map(s=> s.accounts.find(sa=>sa.id===accountId).balance);
   const color = acc.type==='asset' ? '#C9A15C' : '#B5584A';
 
-  const w = 320, h = 110, padL = 38, padR = 4, padT = 8, padB = 8;
-  const min = Math.min(...vals, 0);
-  const max = Math.max(...vals, 0);
+  const w = 320, h = 150, padL = 44, padR = 4, padT = 8, padB = 8;
+  const rawMin = Math.min(...vals, 0);
+  const rawMax = Math.max(...vals, 0);
+  const { vals: gridVals, start, end } = computeGridSteps(rawMin, rawMax, 5000);
+  const min = start, max = end;
   const range = (max - min) || 1;
 
   const xFor = (i)=> padL + (i/(sorted.length-1)) * (w - padL - padR);
@@ -2455,12 +2466,11 @@ function renderAccountHistoryChart(){
 
   let grid = '';
   let axisLabels = '';
-  for(let i=0;i<=3;i++){
-    const gy = padT + (i/3) * (h - padT - padB);
-    const val = max - (i/3) * range;
+  gridVals.forEach(val=>{
+    const gy = yFor(val);
     grid += `<line x1="${padL}" y1="${gy.toFixed(1)}" x2="${w-padR}" y2="${gy.toFixed(1)}" stroke="rgba(237,230,214,0.08)" stroke-width="1"/>`;
-    axisLabels += `<text x="${padL-6}" y="${(gy+3).toFixed(1)}" text-anchor="end" fill="#8F96A3" font-family="IBM Plex Mono, monospace" font-size="8.5">${fmtAxis(val)}</text>`;
-  }
+    axisLabels += `<text x="${padL-6}" y="${(gy+3).toFixed(1)}" text-anchor="end" fill="#8F96A3" font-family="IBM Plex Mono, monospace" font-size="9">${fmtAxis(val)}</text>`;
+  });
 
   const dots = vals.map((v,i)=> `<circle cx="${xFor(i).toFixed(1)}" cy="${yFor(v).toFixed(1)}" r="2" fill="${color}"/>`).join('');
 
@@ -2482,10 +2492,12 @@ function renderMiniChart(svgId, valueKey, color){
     return;
   }
 
-  const w = 320, h = 90, padL = 38, padR = 4, padT = 8, padB = 8;
+  const w = 320, h = 130, padL = 44, padR = 4, padT = 8, padB = 8;
   const vals = sorted.map(s=> s[valueKey]);
-  const min = Math.min(...vals, 0);
-  const max = Math.max(...vals, 0);
+  const rawMin = Math.min(...vals, 0);
+  const rawMax = Math.max(...vals, 0);
+  const { vals: gridVals, start, end } = computeGridSteps(rawMin, rawMax, 5000);
+  const min = start, max = end;
   const range = (max - min) || 1;
 
   const xFor = (i)=> padL + (i/(sorted.length-1)) * (w - padL - padR);
@@ -2495,12 +2507,11 @@ function renderMiniChart(svgId, valueKey, color){
 
   let grid = '';
   let axisLabels = '';
-  for(let i=0;i<=3;i++){
-    const gy = padT + (i/3) * (h - padT - padB);
-    const val = max - (i/3) * range;
+  gridVals.forEach(val=>{
+    const gy = yFor(val);
     grid += `<line x1="${padL}" y1="${gy.toFixed(1)}" x2="${w-padR}" y2="${gy.toFixed(1)}" stroke="rgba(237,230,214,0.08)" stroke-width="1"/>`;
-    axisLabels += `<text x="${padL-6}" y="${(gy+3).toFixed(1)}" text-anchor="end" fill="#8F96A3" font-family="IBM Plex Mono, monospace" font-size="8.5">${fmtAxis(val)}</text>`;
-  }
+    axisLabels += `<text x="${padL-6}" y="${(gy+3).toFixed(1)}" text-anchor="end" fill="#8F96A3" font-family="IBM Plex Mono, monospace" font-size="9">${fmtAxis(val)}</text>`;
+  });
 
   const dots = vals.map((v,i)=> `<circle cx="${xFor(i).toFixed(1)}" cy="${yFor(v).toFixed(1)}" r="2" fill="${color}"/>`).join('');
 
