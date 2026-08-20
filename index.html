@@ -371,10 +371,12 @@
   .tx-add h2{font-family:'Fraunces', serif;font-weight:500;font-size:15.5px;margin:0;}
   .tx-form{display:flex;flex-wrap:wrap;gap:8px;}
   .tx-form .fr{display:flex;gap:8px;flex:1 1 100%;}
-  .tx-form .fr > *{flex:1;min-width:0;}
+  .tx-form .fr > *{flex:1;min-width:0;max-width:100%;}
   .tx-form input[type=text], .tx-form input[type=number], .tx-form input[type=date], .tx-form select{
     background:var(--ink-700);border:1px solid var(--line);color:var(--text);
     font-family:'IBM Plex Sans', sans-serif;font-size:13.5px;padding:9px 10px;border-radius:7px;
+    width:100%;max-width:100%;box-sizing:border-box;
+    overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
   }
   .tx-form input[type=number]{font-family:'IBM Plex Mono', monospace;}
   .sign-toggle{
