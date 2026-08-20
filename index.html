@@ -406,7 +406,7 @@
   .amount-group input[type=number]:focus{outline:none;}
   .tx-save-btn{
     width:100%;background:var(--paper);color:var(--ink-900);
-    font-size:15.5px;font-weight:700;padding:15px;border-radius:10px;margin-top:4px;
+    font-size:13.5px;font-weight:700;padding:9px 10px;border-radius:7px;margin-top:4px;
   }
   .tx-save-btn:hover{filter:brightness(0.95);}
 
@@ -707,15 +707,15 @@
           <input type="text" id="txReference" placeholder="Referenz (optional)" />
         </div>
         <div class="fr">
-          <input type="date" id="txDate" class="date-input" />
-          <select id="txCategorySelect"></select>
-        </div>
-        <div class="fr">
-          <select id="txAccountSelect"></select>
           <div class="amount-group">
             <button type="button" class="sign-toggle-btn minus" id="txSignToggle" data-sign="expense" aria-label="Toggle income/expense">−</button>
             <input type="number" id="txAmount" placeholder="Amount" inputmode="decimal" />
           </div>
+          <input type="date" id="txDate" class="date-input" />
+        </div>
+        <div class="fr">
+          <select id="txCategorySelect"></select>
+          <select id="txAccountSelect"></select>
         </div>
         <button class="save-btn tx-save-btn" id="txSave">Add transaction</button>
       </div>
