@@ -388,6 +388,22 @@
   }
   .sign-btn.minus.active{background:var(--burgundy);color:#FFFFFF;}
   .sign-btn.plus.active{background:var(--gold);color:var(--ink-900);}
+  .amount-group{
+    flex:1;min-width:0;display:flex;background:var(--ink-700);border:1px solid var(--line);
+    border-radius:7px;overflow:hidden;
+  }
+  .sign-toggle-btn{
+    flex-shrink:0;width:38px;background:none;border:none;border-right:1px solid var(--line);
+    color:#FFFFFF;cursor:pointer;font-family:'IBM Plex Mono', monospace;font-size:17px;font-weight:600;
+    transition:background 0.12s, color 0.12s;
+  }
+  .sign-toggle-btn.minus{background:var(--burgundy);}
+  .sign-toggle-btn.plus{background:var(--gold);color:var(--ink-900);}
+  .amount-group input[type=number]{
+    flex:1;min-width:0;background:transparent;border:none;border-radius:0;
+    padding:9px 10px;
+  }
+  .amount-group input[type=number]:focus{outline:none;}
   .tx-save-btn{
     width:100%;background:var(--paper);color:var(--ink-900);
     font-size:15.5px;font-weight:700;padding:15px;border-radius:10px;margin-top:4px;
@@ -692,17 +708,14 @@
         </div>
         <div class="fr">
           <input type="date" id="txDate" class="date-input" />
-          <div class="sign-toggle" id="txSignToggle">
-            <button type="button" class="sign-btn minus active" data-sign="expense" aria-label="Expense (minus)">−</button>
-            <button type="button" class="sign-btn plus" data-sign="income" aria-label="Income (plus)">+</button>
-          </div>
-        </div>
-        <div class="fr">
-          <select id="txAccountSelect"></select>
           <select id="txCategorySelect"></select>
         </div>
         <div class="fr">
-          <input type="number" id="txAmount" placeholder="Amount" inputmode="decimal" />
+          <select id="txAccountSelect"></select>
+          <div class="amount-group">
+            <button type="button" class="sign-toggle-btn minus" id="txSignToggle" data-sign="expense" aria-label="Toggle income/expense">−</button>
+            <input type="number" id="txAmount" placeholder="Amount" inputmode="decimal" />
+          </div>
         </div>
         <button class="save-btn tx-save-btn" id="txSave">Add transaction</button>
       </div>
@@ -3104,19 +3117,27 @@ function shiftPLMonth(delta){
 document.getElementById('plMonthPrev').addEventListener('click', ()=> shiftPLMonth(-1));
 document.getElementById('plMonthNext').addEventListener('click', ()=> shiftPLMonth(1));
 
-document.querySelectorAll('#txSignToggle .sign-btn').forEach(btn=>{
-  btn.addEventListener('click', ()=>{
-    document.querySelectorAll('#txSignToggle .sign-btn').forEach(b=>b.classList.remove('active'));
-    btn.classList.add('active');
-  });
+document.getElementById('txSignToggle').addEventListener('click', ()=>{
+  const btn = document.getElementById('txSignToggle');
+  const isExpense = btn.dataset.sign === 'expense';
+  if(isExpense){
+    btn.dataset.sign = 'income';
+    btn.textContent = '+';
+    btn.classList.remove('minus');
+    btn.classList.add('plus');
+  } else {
+    btn.dataset.sign = 'expense';
+    btn.textContent = '−';
+    btn.classList.remove('plus');
+    btn.classList.add('minus');
+  }
 });
 
 document.getElementById('txSave').addEventListener('click', async ()=>{
   const name = document.getElementById('txName').value.trim();
   const reference = document.getElementById('txReference').value.trim();
   const date = txDateInput.value;
-  const activeSignBtn = document.querySelector('#txSignToggle .sign-btn.active');
-  const type = activeSignBtn ? activeSignBtn.dataset.sign : 'expense';
+  const type = document.getElementById('txSignToggle').dataset.sign;
   const accountId = document.getElementById('txAccountSelect').value;
   const category = document.getElementById('txCategorySelect').value;
   const amount = Number(document.getElementById('txAmount').value) || 0;
@@ -3138,8 +3159,11 @@ document.getElementById('txSave').addEventListener('click', async ()=>{
   document.getElementById('txName').value = '';
   document.getElementById('txReference').value = '';
   document.getElementById('txAmount').value = '';
-  document.querySelectorAll('#txSignToggle .sign-btn').forEach(b=>b.classList.remove('active'));
-  document.querySelector('#txSignToggle .sign-btn.minus').classList.add('active');
+  const signBtn = document.getElementById('txSignToggle');
+  signBtn.dataset.sign = 'expense';
+  signBtn.textContent = '−';
+  signBtn.classList.remove('plus');
+  signBtn.classList.add('minus');
   txCurrentPage = 1;
   renderTransactions();
   renderPL();
