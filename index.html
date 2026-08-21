@@ -207,8 +207,8 @@
   .snapshot-bar .txt .s{font-size:12px;color:var(--text-muted);margin-top:2px;margin-bottom:10px;}
   .date-input{
     background:var(--ink-700);border:1px solid var(--line);color:var(--text);
-    font-family:'IBM Plex Mono', monospace;font-size:13px;padding:8px 10px;border-radius:7px;
-    width:100%;max-width:220px;
+    font-family:'IBM Plex Mono', monospace;font-size:13px;padding:0 10px;border-radius:7px;
+    width:100%;max-width:220px;height:38px;box-sizing:border-box;
     color-scheme:dark;
   }
   .snapshot-btn{
@@ -374,8 +374,8 @@
   .tx-form .fr > *{flex:1;min-width:0;max-width:100%;}
   .tx-form input[type=text], .tx-form input[type=number], .tx-form input[type=date], .tx-form select{
     background:var(--ink-700);border:1px solid var(--line);color:var(--text);
-    font-family:'IBM Plex Sans', sans-serif;font-size:13.5px;padding:9px 10px;border-radius:7px;
-    width:100%;max-width:100%;box-sizing:border-box;
+    font-family:'IBM Plex Sans', sans-serif;font-size:13.5px;padding:0 10px;border-radius:7px;
+    width:100%;max-width:100%;box-sizing:border-box;height:38px;
     overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
   }
   .tx-form input[type=number]{font-family:'IBM Plex Mono', monospace;}
@@ -392,23 +392,23 @@
   .sign-btn.plus.active{background:var(--gold);color:var(--ink-900);}
   .amount-group{
     flex:1;min-width:0;max-width:100%;display:flex;background:var(--ink-700);border:1px solid var(--line);
-    border-radius:7px;overflow:hidden;
+    border-radius:7px;overflow:hidden;height:38px;box-sizing:border-box;
   }
   .sign-toggle-btn{
-    flex-shrink:0;width:38px;background:none;border:none;border-right:1px solid var(--line);
+    flex-shrink:0;width:38px;height:100%;background:none;border:none;border-right:1px solid var(--line);
     color:#FFFFFF;cursor:pointer;font-family:'IBM Plex Mono', monospace;font-size:17px;font-weight:600;
     transition:background 0.12s, color 0.12s;
   }
   .sign-toggle-btn.minus{background:var(--burgundy);}
   .sign-toggle-btn.plus{background:var(--gold);color:var(--ink-900);}
   .amount-group input[type=number]{
-    flex:1;min-width:0;background:transparent;border:none;border-radius:0;
-    padding:9px 10px;
+    flex:1;min-width:0;height:100%;background:transparent;border:none;border-radius:0;
+    padding:0 10px;box-sizing:border-box;
   }
   .amount-group input[type=number]:focus{outline:none;}
   .tx-save-btn{
-    width:100%;background:var(--paper);color:var(--ink-900);
-    font-size:13.5px;font-weight:700;padding:9px 10px;border-radius:7px;margin-top:4px;
+    width:100%;height:38px;box-sizing:border-box;background:var(--paper);color:var(--ink-900);
+    font-size:13.5px;font-weight:700;padding:0 10px;border-radius:7px;margin-top:4px;
   }
   .tx-save-btn:hover{filter:brightness(0.95);}
 
@@ -1201,6 +1201,7 @@ let accounts = [];
 let snapshots = [];
 let transactions = [];
 let txCurrentPage = 1;
+let lastFilteredTransactions = [];
 let dividends = [];
 let budgets = [];
 let categoryGroups = [];
@@ -1738,6 +1739,7 @@ function renderTransactions(){
     if(selectedAccountId!=='all' && t.accountId!==selectedAccountId) return false;
     return true;
   });
+  lastFilteredTransactions = filteredTx;
 
   document.getElementById('txCountLabel').textContent = `(${filteredTx.length})`;
 
@@ -3173,8 +3175,8 @@ document.getElementById('txSave').addEventListener('click', async ()=>{
 });
 
 document.getElementById('txExportBtn').addEventListener('click', ()=>{
-  if(transactions.length===0){ alert('No transactions yet to export.'); return; }
-  const sorted = [...transactions].sort((a,b)=> new Date(a.date) - new Date(b.date));
+  if(lastFilteredTransactions.length===0){ alert('No transactions match the current filters to export.'); return; }
+  const sorted = [...lastFilteredTransactions].sort((a,b)=> new Date(a.date) - new Date(b.date));
   const header = ['Date','Name','Reference','Account','Category','Amount'];
   const rows = sorted.map(t=>{
     const acc = ledgerAccounts.find(a=>a.id===t.accountId);
