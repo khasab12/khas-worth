@@ -2099,7 +2099,9 @@ function renderLedgerSection(type, containerId, totalId){
       const bal = computeLedgerBalance(acc.id);
       catTotal += bal;
       sectionTotal += bal;
-      const balColor = bal > 0 ? 'var(--money-green)' : (bal < 0 ? 'var(--money-red)' : 'var(--text)');
+      const isGood = type==='asset' ? bal > 0 : bal < 0;
+      const isBad = type==='asset' ? bal < 0 : bal > 0;
+      const balColor = isGood ? 'var(--money-green)' : (isBad ? 'var(--money-red)' : 'var(--text)');
       return `<div class="row">
         <div class="meta"><span class="name">${escapeHtml(acc.name)}</span></div>
         <div class="right"><span class="balance-static" style="color:${balColor}">${fmtPlain(bal)}</span></div>
@@ -2158,6 +2160,10 @@ function renderRows(type, containerId){
     `;
     const rowsContainer = groupEl.querySelector('.rows');
     catRows.forEach(acc=>{
+      const bal = Number(acc.balance||0);
+      const isGood = type==='asset' ? bal > 0 : bal < 0;
+      const isBad = type==='asset' ? bal < 0 : bal > 0;
+      const balColor = isGood ? 'var(--money-green)' : (isBad ? 'var(--money-red)' : 'var(--text)');
       const row = document.createElement('div');
       row.className = 'row';
       row.innerHTML = `
@@ -2165,7 +2171,7 @@ function renderRows(type, containerId){
           <button class="name-btn" data-id="${acc.id}"><span class="name">${escapeHtml(acc.name)}</span></button>
         </div>
         <div class="right">
-          <input class="balance" type="text" inputmode="decimal" value="${fmtPlain(acc.balance)}" data-id="${acc.id}" />
+          <input class="balance" type="text" inputmode="decimal" value="${fmtPlain(acc.balance)}" data-id="${acc.id}" style="color:${balColor}" />
         </div>
       `;
       rowsContainer.appendChild(row);
