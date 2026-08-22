@@ -464,6 +464,34 @@
   }
   .pl-month-nav:hover{border-color:var(--gold-dim);color:var(--gold);}
   #plTopTotals{margin-top:18px;}
+  .pl-widget-cards{
+    display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:18px;
+  }
+  .pl-widget-card{
+    background:var(--ink-800);border:1px solid var(--line-strong);border-radius:12px;
+    padding:11px 12px;min-width:0;
+  }
+  .pl-widget-name{
+    font-family:'IBM Plex Mono', monospace;font-size:9px;color:var(--text-muted);
+    text-transform:uppercase;letter-spacing:0.04em;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:6px;
+  }
+  .pl-widget-figures{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px;}
+  .pl-widget-actual{
+    font-family:'Fraunces', serif;font-weight:500;font-size:16px;color:var(--text);
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  }
+  .pl-widget-budget{
+    font-family:'IBM Plex Mono', monospace;font-size:10px;color:var(--text-muted);
+    white-space:nowrap;flex-shrink:0;margin-left:6px;
+  }
+  .pl-widget-bar-track{
+    height:5px;border-radius:3px;background:var(--ink-700);overflow:hidden;
+  }
+  .pl-widget-bar-fill{height:100%;border-radius:3px;}
+  .pl-widget-diff{
+    margin-top:6px;font-family:'IBM Plex Mono', monospace;font-size:10px;
+  }
   .pl-budget-hint{
     font-size:11px;color:var(--text-muted);line-height:1.5;margin:0 0 18px;
   }
@@ -750,6 +778,8 @@
     </section>
 
     <div id="plTopTotals"></div>
+
+    <div id="plWidgetCards" class="pl-widget-cards"></div>
 
     <p class="pl-budget-hint">Enter budget amounts as positive numbers — income (A) is treated as +, all other categories (B–F) as −, automatically.</p>
 
@@ -1927,6 +1957,28 @@ function renderPL(){
 
     groupResults.push({ groupName: group.name, excludeFromTotalI: !!group.excludeFromTotalI, rowsHtml, groupActual, groupBudget, groupDiff });
   });
+
+  // --- Widget-style overview cards (one per main category) ---
+  const widgetContainer = document.getElementById('plWidgetCards');
+  widgetContainer.innerHTML = groupResults.map(g=>{
+    const budgetMag = Math.abs(g.groupBudget);
+    const actualMag = Math.abs(g.groupActual);
+    const pct = budgetMag > 0.005 ? Math.min(100, Math.round((actualMag/budgetMag)*100)) : (actualMag > 0.005 ? 100 : 0);
+    const overBudget = budgetMag > 0.005 && actualMag > budgetMag;
+    const barColor = overBudget ? 'var(--money-red)' : 'var(--money-green)';
+    const diffClass = amtColorClass(g.groupDiff);
+    return `
+      <div class="pl-widget-card">
+        <div class="pl-widget-name">${escapeHtml(g.groupName)}</div>
+        <div class="pl-widget-figures">
+          <span class="pl-widget-actual">${fmtPlain(g.groupActual)}</span>
+          <span class="pl-widget-budget">/ ${fmtPlain(g.groupBudget)}</span>
+        </div>
+        <div class="pl-widget-bar-track"><div class="pl-widget-bar-fill" style="width:${pct}%;background:${barColor}"></div></div>
+        <div class="pl-widget-diff ${diffClass}">${fmtPlain(g.groupDiff)} diff</div>
+      </div>
+    `;
+  }).join('');
 
   // --- Pass 2: render ---
   const totalRowHtml = (label, actual, budget, diff)=> `
