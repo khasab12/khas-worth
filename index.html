@@ -1071,6 +1071,7 @@
 
       <section class="settings-intro">
         <p class="settings-note">Create and manage the accounts used by the <strong>Ledger</strong> tab and Transactions. Set an opening balance for each — Ledger then tracks the account as opening balance + everything logged in Transactions. Completely independent from Treasury; adding/editing accounts here never touches Treasury, and vice versa.</p>
+        <p class="settings-note">For liability accounts, enter the amount owed as a positive number — it's automatically stored and shown as negative, so an expense on that account correctly increases the debt.</p>
       </section>
 
       <section class="settings-groups">
@@ -1313,6 +1314,23 @@ async function loadData(){
     const la = localStorage.getItem('ledger_ledgerAccounts');
     ledgerAccounts = la ? JSON.parse(la) : [];
   }catch(e){ ledgerAccounts = []; }
+
+  // One-time migration: liabilities used to be stored as positive numbers (debt magnitude).
+  // Now they're stored as negative numbers, so a liability's balance itself reflects debt direction.
+  try{
+    if(!localStorage.getItem('ledger_liabilitySignMigrated_v1')){
+      accounts.forEach(a=>{
+        if(a.type==='liability' && Number(a.balance||0) > 0){ a.balance = -Number(a.balance); }
+      });
+      ledgerAccounts.forEach(a=>{
+        if(a.type==='liability' && Number(a.openingBalance||0) > 0){ a.openingBalance = -Number(a.openingBalance); }
+      });
+      await saveAccounts();
+      await saveLedgerAccounts();
+      localStorage.setItem('ledger_liabilitySignMigrated_v1', '1');
+    }
+  }catch(e){ console.error('liability sign migration failed', e); }
+
   render();
 }
 
@@ -1375,7 +1393,7 @@ async function setBudget(month, category, amount){
 function totals(){
   const assetsTotal = accounts.filter(a=>a.type==='asset').reduce((s,a)=>s+Number(a.balance||0),0);
   const liabTotal = accounts.filter(a=>a.type==='liability').reduce((s,a)=>s+Number(a.balance||0),0);
-  return { assetsTotal, liabTotal, netWorth: assetsTotal - liabTotal };
+  return { assetsTotal, liabTotal, netWorth: assetsTotal + liabTotal };
 }
 
 function uid(prefix){ return prefix+'_'+Date.now()+'_'+Math.random().toString(36).slice(2,7); }
@@ -1611,7 +1629,8 @@ function renderLedgerAccountList(containerId, type){
       } else if(field==='class'){
         acc.class = e.target.value;
       } else if(field==='openingBalance'){
-        acc.openingBalance = Number(e.target.value) || 0;
+        const raw = Number(e.target.value) || 0;
+        acc.openingBalance = (acc.type==='liability' && raw > 0) ? -raw : raw;
       }
       await saveLedgerAccounts();
       render();
@@ -2099,9 +2118,7 @@ function renderLedgerSection(type, containerId, totalId){
       const bal = computeLedgerBalance(acc.id);
       catTotal += bal;
       sectionTotal += bal;
-      const isGood = type==='asset' ? bal > 0 : bal < 0;
-      const isBad = type==='asset' ? bal < 0 : bal > 0;
-      const balColor = isGood ? 'var(--money-green)' : (isBad ? 'var(--money-red)' : 'var(--text)');
+      const balColor = bal > 0 ? 'var(--money-green)' : (bal < 0 ? 'var(--money-red)' : 'var(--text)');
       return `<div class="row">
         <div class="meta"><span class="name">${escapeHtml(acc.name)}</span></div>
         <div class="right"><span class="balance-static" style="color:${balColor}">${fmtPlain(bal)}</span></div>
@@ -2125,7 +2142,7 @@ function renderLedgerSection(type, containerId, totalId){
 function renderLedgerTab(){
   const assetsTotal = renderLedgerSection('asset', 'ledgerAssetsRows', 'ledgerAssetsTotal');
   const liabTotal = renderLedgerSection('liability', 'ledgerLiabilitiesRows', 'ledgerLiabilitiesTotal');
-  document.getElementById('ledgerNetWorthFigure').textContent = fmtPlain(assetsTotal - liabTotal);
+  document.getElementById('ledgerNetWorthFigure').textContent = fmtPlain(assetsTotal + liabTotal);
 }
 
 function renderRows(type, containerId){
@@ -2161,9 +2178,7 @@ function renderRows(type, containerId){
     const rowsContainer = groupEl.querySelector('.rows');
     catRows.forEach(acc=>{
       const bal = Number(acc.balance||0);
-      const isGood = type==='asset' ? bal > 0 : bal < 0;
-      const isBad = type==='asset' ? bal < 0 : bal > 0;
-      const balColor = isGood ? 'var(--money-green)' : (isBad ? 'var(--money-red)' : 'var(--text)');
+      const balColor = bal > 0 ? 'var(--money-green)' : (bal < 0 ? 'var(--money-red)' : 'var(--text)');
       const row = document.createElement('div');
       row.className = 'row';
       row.innerHTML = `
@@ -2189,7 +2204,11 @@ function renderRows(type, containerId){
     inp.addEventListener('change', async (e)=>{
       const id = e.target.dataset.id;
       const acc = accounts.find(a=>a.id===id);
-      if(acc){ acc.balance = parseGermanNumber(e.target.value); await saveAccounts(); render(); }
+      if(acc){
+        const parsed = parseGermanNumber(e.target.value);
+        acc.balance = (acc.type==='liability' && parsed > 0) ? -parsed : parsed;
+        await saveAccounts(); render();
+      }
     });
   });
 }
@@ -2665,7 +2684,8 @@ document.getElementById('assetSave').addEventListener('click', async ()=>{
 document.getElementById('liabSave').addEventListener('click', async ()=>{
   const name = document.getElementById('liabName').value.trim();
   const category = document.getElementById('liabCategory').value;
-  const balance = Number(document.getElementById('liabBalance').value)||0;
+  const rawBalance = Number(document.getElementById('liabBalance').value)||0;
+  const balance = rawBalance > 0 ? -rawBalance : rawBalance;
   if(!name) return;
   accounts.push({ id: 'l_'+Date.now()+'_'+Math.random().toString(36).slice(2,7), name, category, type:'liability', balance });
   await saveAccounts();
@@ -3009,7 +3029,7 @@ document.getElementById('csvFileInput').addEventListener('change', (e)=>{
 
         const assetsTotal = assetsIdx>-1 ? (Number(parts[assetsIdx]) || 0) : 0;
         const liabilitiesTotal = liabIdx>-1 ? (Number(parts[liabIdx]) || 0) : 0;
-        const netWorth = netIdx>-1 && parts[netIdx] !== '' ? (Number(parts[netIdx])||0) : (assetsTotal - liabilitiesTotal);
+        const netWorth = netIdx>-1 && parts[netIdx] !== '' ? (Number(parts[netIdx])||0) : (assetsTotal + liabilitiesTotal);
 
         // Best-effort per-account matching by name against current accounts
         const snapAccounts = [];
@@ -3070,7 +3090,8 @@ document.getElementById('modalNameInput').addEventListener('change', async (e)=>
 document.getElementById('modalBalanceInput').addEventListener('change', async (e)=>{
   const acc = accounts.find(a=>a.id===currentModalAccountId);
   if(acc){
-    acc.balance = Number(e.target.value) || 0;
+    const raw = Number(e.target.value) || 0;
+    acc.balance = (acc.type==='liability' && raw > 0) ? -raw : raw;
     await saveAccounts();
     render();
     renderAccountModal();
